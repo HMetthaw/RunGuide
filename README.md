@@ -13,30 +13,30 @@ Instalovatelná webová aplikace (PWA) pro běžce: naplánuješ vlastní trasu,
 
 ## Stav
 
-Projekt je ve fázi plánování a scaffoldingu. Detailní postup je v [docs/PLAN.md](docs/PLAN.md).
+První funkční prototyp běžeckého jádra je v [runner.html](runner.html): plánování cíle, kreslení vlastní trasy, GPS běh, základní hlasové rady a lokální historie. V této fázi zůstávají data jen v telefonu; před testem s dalšími lidmi připojíme zabezpečený cloudový účet.
 
 ## Zamýšlený stack
 
-- React + TypeScript + Vite
+- Statický HTML, CSS a JavaScript prototyp; případná komponentová vrstva přijde až s růstem aplikace
 - PWA manifest a service worker pro instalaci na telefon
 - Web Geolocation API a Web Speech API pro GPS a hlasové pokyny
-- MapLibre GL JS pro mapu a tvorbu tras
+- Leaflet + OpenStreetMap pro mapu a tvorbu tras
 - Supabase pro přihlášení, soukromá data a budoucí soutěžní backend
 - GitHub Pages pro hostování PWA
 
 ## Lokální spuštění
 
-Po dokončení scaffoldingu bude stačit:
+Pro ověření prototypu spusť lokální server:
 
 ```bash
-npm install
-npm run dev
+python -m http.server 4173
 ```
 
-Produkční PWA se nasadí na GitHub Pages; v telefonu se otevře běžným odkazem a lze ji přidat na plochu.
+Pak otevři `http://localhost:4173/runner.html`. Produkční PWA se nasadí na GitHub Pages; v telefonu se otevře běžným odkazem a lze ji přidat na plochu.
 
 ## Projektová dokumentace
 
 - [Plán MVP a pilotu](docs/PLAN.md)
+- [Popis aktuálního běžeckého jádra](docs/CORE_APP.md)
 - [Návrh backendu](docs/BACKEND.md)
 - [Pravidla pro agenty a vývoj](AGENTS.md)
