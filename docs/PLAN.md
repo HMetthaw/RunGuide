@@ -4,12 +4,13 @@
 
 Běžec chce před vyběhnutím rychle vytvořit vlastní trasu, zvolit si cíl a během běhu nemuset kontrolovat displej. RunGuide má spojit navigaci po trase a průběžné vedení cílovým tempem hlasem do sluchátek.
 
-## Fáze 1 — technický základ
+## Fáze 1 — osobní PWA a technický základ
 
-1. Založit Expo/TypeScript aplikaci a základní navigaci.
+1. Založit React/TypeScript PWA a automatické nasazení na GitHub Pages.
 2. Přidat mapu, GPS oprávnění a bezpečné zobrazení aktuální polohy.
 3. Přidat výpočet cílového tempa z vzdálenosti a času.
 4. Připravit doménové moduly pro trasu, běh, tempo a hlasová doporučení.
+5. Přidat jeden soukromý účet a cloudové ukládání dat přes Supabase.
 
 ## Fáze 2 — MVP běhu
 
@@ -26,6 +27,16 @@ Běžec chce před vyběhnutím rychle vytvořit vlastní trasu, zvolit si cíl 
 3. Zaznamenat anonymní technická data: ztráty GPS, pády, odchylky trasy a četnost hlasových pokynů.
 4. Vyhodnotit pilot před rozhodnutím o veřejném vydání.
 
+## Fáze 4 — Territory & Clans (za 4 až 6 měsíců)
+
+Tato fáze se začne až po úspěšném ověření běžeckého jádra a pilotu. Datový základ je připraven už nyní, ale herní obrazovky ani soutěže nebudou součástí první verze.
+
+1. Převést uzavřený běh s dostatečnou vzdáleností, plochou a přesností GPS na polygon.
+2. Pokrýt polygon agregovanými šestiúhelníkovými buňkami a atomicky převzít pouze platné buňky.
+3. Zobrazit veřejně jen buňky, jejich vlastníka a agregované skóre; nikdy cizí syrovou trasu nebo startovní bod.
+4. Přidat klany, členství, klanové skóre a přátelské soutěže.
+5. Ověřit férovost, dopad na baterii, soukromí a odolnost proti falešné GPS před veřejným vydáním.
+
 ## Kritéria pro rozhodnutí o vydání
 
 - Nejméně 7 z 10 pilotních běžců dokončí alespoň 3 běhy.
@@ -41,9 +52,11 @@ Běžec chce před vyběhnutím rychle vytvořit vlastní trasu, zvolit si cíl 
 | Mobilní OS omezuje GPS na pozadí | Testovat na reálných iOS i Android zařízeních od začátku. |
 | Hlas obtěžuje uživatele | Zavést minimální intervaly, prahy a nastavení intenzity pokynů. |
 | Mapa/routing vyžaduje placené API | Pro MVP kreslit ruční trasu; routing řešit až podle potřeb pilotu. |
+| Území odhaluje bydliště | Zobrazovat jen buňky s minimální velikostí; cizí trasy a starty nikdy nezveřejňovat. |
+| Současné převzetí stejné buňky | Převzetí provádět v jedné serverové transakci a ukládat audit událostí. |
 
 ## Mimo první verzi
 
 - Veřejně předpřipravené trasy.
-- Sdílení tras, žebříčky a sociální funkce.
+- Herní území, žebříčky a sociální funkce před dokončením fáze čtyři.
 - Platby, předplatné a publikace do obchodů.
