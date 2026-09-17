@@ -1,2 +1,3 @@
-// Po nasazení Google Apps Scriptu sem vlož adresu končící na /exec.
-window.RUNGUIDE_CONFIG={wishlistEndpoint:""};
+// Public deployment URL only. Never put credentials in this file.
+// After deploying apps-script/Code.gs, set the HTTPS /exec URL and rebuild.
+window.RUNGUIDE_CONFIG = Object.freeze({ wishlistEndpoint: "" });

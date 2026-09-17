@@ -13,12 +13,14 @@ Instalovatelná webová aplikace (PWA) pro běžce: naplánuješ vlastní trasu,
 
 ## Stav
 
-První funkční prototyp běžeckého jádra je v [runner.html](runner.html): plánování cíle, kreslení vlastní trasy, GPS běh, základní hlasové rady a lokální historie. V této fázi zůstávají data jen v telefonu; před testem s dalšími lidmi připojíme zabezpečený cloudový účet.
+Osobní testovací verze v [runner.html](runner.html) má plánování tras, filtrovanou GPS, vyhlazené aktuální tempo, pauzu a obnovu běhu, hlasové rady, mapky skutečných stop, export a soukromou historii. Nová implementace je v TypeScriptu a má automatické testy. Přehled nalezených chyb a ověření je v [auditu](docs/AUDIT.md).
+
+Cloudový klient a databázové migrace jsou připravené, ale žádný živý Supabase projekt není propojený. Bez konfigurace funguje aplikace pouze místně. Navigace zatím sleduje ručně zvolené body, ne pěší routing po cestách. GPS a zvuk ještě potřebují reálný terénní test v telefonu.
 
 ## Zamýšlený stack
 
-- Statický HTML, CSS a JavaScript prototyp; případná komponentová vrstva přijde až s růstem aplikace
-- PWA manifest a service worker pro instalaci na telefon
+- TypeScript strict + Vite, s oddělenou doménovou logikou a webovým rozhraním
+- Generovaný PWA manifest a service worker, offline shell včetně písem a Leafletu
 - Web Geolocation API a Web Speech API pro GPS a hlasové pokyny
 - Leaflet + OpenStreetMap pro mapu a tvorbu tras
 - Supabase pro přihlášení, soukromá data a budoucí soutěžní backend
@@ -26,17 +28,30 @@ První funkční prototyp běžeckého jádra je v [runner.html](runner.html): p
 
 ## Lokální spuštění
 
-Pro ověření prototypu spusť lokální server:
+Použij Node.js 24 a instalaci z uzamčených závislostí:
 
 ```bash
-python -m http.server 4173
+npm ci
+npm run dev
 ```
 
-Pak otevři `http://localhost:4173/runner.html`. Produkční PWA se nasadí na GitHub Pages; v telefonu se otevře běžným odkazem a lze ji přidat na plochu.
+Dev server vypíše adresu; otevři na ní `/runner.html`. Samotný Python server nad zdrojovou složkou už TypeScript nezpracuje.
+
+```bash
+npm run check
+npm run preview
+```
+
+`check` provede TypeScript, ESLint, testy a produkční build. `preview` otevře build na `http://127.0.0.1:4173/runner.html`. PWA cache je aktivní pouze v produkčním buildu. Starý prototyp se může při prvním otevření načíst z původní cache; zavři všechny jeho karty a znovu otevři. Nová verze aktualizace nabízí mimo rozběhnutý běh.
+
+Manifest i service worker generuje Vite do `dist/`; neupravuj je ručně. CI je v `.github/workflows/check.yml`, ručně spouštěné nasazení Pages v `.github/workflows/pages.yml`. GitHub remote ani veřejná adresa zatím nejsou založené. Pages workflow počítá s adresou `https://uživatel.github.io/název-repozitáře/`; pro vlastní doménu nastav `BASE_PATH=/`.
+
+Cloud připrav podle [docs/BACKEND.md](docs/BACKEND.md). Veřejné `VITE_` hodnoty se zapisují do `.env` nebo GitHub repository variables; nikdy do nich nedávej service-role/secret klíč.
 
 ## Projektová dokumentace
 
 - [Plán MVP a pilotu](docs/PLAN.md)
 - [Popis aktuálního běžeckého jádra](docs/CORE_APP.md)
+- [Audit a výsledky testů](docs/AUDIT.md)
 - [Návrh backendu](docs/BACKEND.md)
 - [Pravidla pro agenty a vývoj](AGENTS.md)

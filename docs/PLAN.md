@@ -6,7 +6,7 @@ Běžec chce před vyběhnutím rychle vytvořit vlastní trasu, zvolit si cíl 
 
 ## Fáze 1 — osobní PWA a technický základ
 
-1. Založit React/TypeScript PWA a automatické nasazení na GitHub Pages.
+1. Založit TypeScript/Vite PWA a nasazení na GitHub Pages. Komponentový framework případně doplnit podle růstu UI.
 2. Přidat mapu, GPS oprávnění a bezpečné zobrazení aktuální polohy.
 3. Přidat výpočet cílového tempa z vzdálenosti a času.
 4. Připravit doménové moduly pro trasu, běh, tempo a hlasová doporučení.
@@ -60,3 +60,9 @@ Tato fáze se začne až po úspěšném ověření běžeckého jádra a pilotu
 - Veřejně předpřipravené trasy.
 - Herní území, žebříčky a sociální funkce před dokončením fáze čtyři.
 - Platby, předplatné a publikace do obchodů.
+
+## Průběžný stav — 16. 9. 2026
+
+Osobní jádro je lokálně implementované a automaticky ověřené podle `docs/AUDIT.md`. Nejde zatím o veřejně nasazenou ani terénně otestovanou aplikaci. Připravené SQL migrace a cloudový klient čekají na propojení skutečné služby.
+
+Nejbližší brány: dokončit živé napojení wishlistu, zpřístupnit soukromý HTTPS test, otestovat telefon a sluchátka, následně propojit cloud. Vlastní test bude trvat podle zkušenosti přibližně měsíc až dva; až potom uzavřený nábor známých a zájemců z Instagramu. Herní test a veřejná propagace zůstávají podmíněné výsledky, ne kalendářním příslibem.
