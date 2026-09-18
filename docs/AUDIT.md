@@ -57,3 +57,10 @@
 - Ověřeny šířky 320, 390 a 1440 px; mobil bez vodorovného přetečení, nativní mapový dialog a návrat klávesnicového fokusu. Živý pěší routing v prohlížeči vrátil trasu 0,75 km.
 - TypeScript, ESLint, 51 testů a produkční build prošly. Nasazena Cloudflare verze 70f5173a-2e25-4e54-a9c3-ed00493391cb. Na veřejné adrese ověřen přechod z předchozí PWA přes tlačítko Aktualizovat aplikaci na nový vzhled.
 
+
+## Tmavý režim · 18. 9. 2026
+
+- Přepínač v hlavičce ukládá volbu do runguide.theme. Bez vlastní volby se aplikace řídí systémem; vzhled se nastavuje před prvním vykreslením. Nedostupné úložiště neblokuje aplikaci.
+- Tmavá paleta pokrývá mapový podklad, formuláře, statistiky, historii, dialogy a ovládání. Mapa používá stávající OpenStreetMap podklad s filtrem pouze na dlaždicích.
+- Prošly TypeScript, ESLint, 54 testů a produkční build. V prohlížeči ověřeno přepínání, zachování volby po obnovení a šířky 320, 390 a 1440 px. Nasazena Cloudflare verze 10b84168-a49a-4cf1-9bc3-efac32a4b6d4.
+

@@ -20,6 +20,7 @@ import { download, gpx } from "./services/export";
 import { historyCard } from "./services/history";
 import { registerApp } from "./services/pwa";
 import { setupPlannerInterface } from "./services/planner-ui";
+import { setupTheme } from "./services/theme";
 import "./app.css";
 import "@fontsource/barlow-condensed/latin-ext-800.css";
 import "@fontsource/barlow-condensed/latin-800.css";
@@ -29,6 +30,8 @@ import "@fontsource/manrope/latin-ext-700.css";
 import "@fontsource/manrope/latin-700.css";
 import "@fontsource/dm-mono/latin-ext-400.css";
 import "@fontsource/dm-mono/latin-400.css";
+
+setupTheme();
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T {
   const found = document.getElementById(id);

@@ -8,9 +8,83 @@
   --accent: #df4d27;
   --accent-soft: #fff0ea;
   --teal: #27665f;
+  --inverse: #172c45;
+  --hover: #f5f8fa;
+  --disabled: #edf1f4;
+  --metric: #eaf0f5;
+  --overlay: #fffffff5;
+  --map-base: #dde7df;
+  --ruler: #bdccd8;
+  --error: #ac3220;
+  --notice-line: #e9b19f;
   --display: "Barlow Condensed", Impact, sans-serif;
   --sans: "Manrope", Arial, sans-serif;
   --mono: "DM Mono", monospace;
+}
+:root[data-theme="dark"] {
+  --ink: #e6edf5;
+  --muted: #a8b8c9;
+  --paper: #0b121a;
+  --surface: #101922;
+  --line: #2b3a49;
+  --accent: #ff956f;
+  --accent-soft: #34251f;
+  --teal: #80cbb3;
+  --inverse: #16273a;
+  --hover: #1f3041;
+  --disabled: #1c2936;
+  --metric: #152332;
+  --overlay: #101922f5;
+  --map-base: #172129;
+  --ruler: #42556a;
+  --error: #ffab93;
+  --notice-line: #795041;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+.theme-sun,
+[data-theme="dark"] .theme-moon {
+  display: none;
+}
+[data-theme="dark"] .theme-sun {
+  display: block;
+}
+/* Only map tiles are dimmed; route geometry and controls retain their colors. */
+[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(0.92) hue-rotate(180deg) saturate(0.45) brightness(1.2)
+    contrast(0.9);
+}
+.map-wrap .leaflet-control-zoom a {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.map-wrap .leaflet-control-zoom a:hover {
+  background: var(--hover);
+}
+.map-wrap .leaflet-control-attribution,
+.map-wrap .leaflet-control-attribution a {
+  color: var(--muted);
+}
+[data-theme="dark"] .history-item svg polyline {
+  stroke: var(--teal);
+}
+[data-theme="dark"] .button.primary {
+  color: #17202b;
+}
+[data-theme="dark"] .button.primary:hover:not(:disabled) {
+  background: #ffae90;
+  border-color: #ffae90;
 }
 * {
   box-sizing: border-box;
@@ -75,11 +149,11 @@ button {
 }
 button:hover:not(:disabled) {
   border-color: var(--ink);
-  background: #f5f8fa;
+  background: var(--hover);
 }
 button:disabled {
   color: #718092;
-  background: #edf1f4;
+  background: var(--disabled);
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -127,7 +201,7 @@ textarea {
   top: 8px;
   left: 8px;
   z-index: 5000;
-  background: white;
+  background: var(--surface);
   padding: 12px;
   transform: translateY(-160%);
 }
@@ -162,7 +236,7 @@ textarea {
   width: 35px;
   height: 39px;
   border-radius: 9px 9px 9px 2px;
-  background: var(--ink);
+  background: var(--inverse);
   color: white;
   display: grid;
   place-items: center;
@@ -173,7 +247,7 @@ textarea {
   height: 9px;
   border-radius: 50%;
   background: var(--accent);
-  border: 2px solid white;
+  border: 2px solid var(--surface);
   position: absolute;
   bottom: -3px;
   right: -3px;
@@ -316,11 +390,11 @@ body[data-offline="true"] .connection-status::before {
 .update-button {
   color: var(--accent);
   background: var(--accent-soft);
-  border-color: #e9b19f;
+  border-color: var(--notice-line);
 }
 .app-notice {
   background: var(--accent-soft);
-  border: 1px solid #e9b19f;
+  border: 1px solid var(--notice-line);
   border-left: 4px solid var(--accent);
   margin-top: 18px;
   padding: 16px 20px;
@@ -337,7 +411,7 @@ body[data-offline="true"] .connection-status::before {
   grid-template-columns: 320px minmax(0, 1fr);
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: white;
+  background: var(--surface);
   overflow: clip;
   box-shadow: 0 8px 28px #172c4505;
 }
@@ -430,7 +504,7 @@ body[data-offline="true"] .connection-status::before {
 }
 #goal-error:not(:empty) {
   margin-top: 12px;
-  color: #ac3220;
+  color: var(--error);
   font-size: 12px;
 }
 .route-controls .section-kicker {
@@ -616,7 +690,7 @@ textarea {
   flex: 1;
   min-height: 440px;
   isolation: isolate;
-  background: #dde7df;
+  background: var(--map-base);
 }
 #map {
   height: 100%;
@@ -624,7 +698,7 @@ textarea {
   width: 100%;
   position: absolute;
   inset: 0;
-  background: #dde7df;
+  background: var(--map-base);
 }
 .map-hud,
 .map-footer {
@@ -648,10 +722,10 @@ textarea {
 .map-hud > span,
 .map-footer > span {
   padding: 10px 13px;
-  border: 1px solid #ffffffa8;
+  border: 1px solid var(--line);
   border-radius: 7px;
   font: 10px/1.6 var(--mono);
-  background: #ffffffed;
+  background: var(--overlay);
   box-shadow: 0 2px 8px #172c4510;
 }
 .map-hud > span {
@@ -673,7 +747,7 @@ textarea {
   gap: 8px;
   pointer-events: auto;
   box-shadow: 0 2px 8px #172c4510;
-  border-color: white;
+  border-color: var(--line);
   font-size: 10px;
   min-height: 44px;
 }
@@ -681,7 +755,7 @@ textarea {
   margin-right: 48px;
 }
 .map-footer > span {
-  background: var(--ink);
+  background: var(--inverse);
   color: white;
   border-color: var(--ink);
 }
@@ -710,7 +784,7 @@ textarea {
 .map-wrap .leaflet-control-attribution {
   max-width: none;
   font-size: 8px;
-  background: #ffffffdf;
+  background: var(--overlay);
 }
 .map-feedback {
   display: flex;
@@ -731,7 +805,7 @@ textarea {
   color: var(--muted);
 }
 #map-status:not(:empty) {
-  color: #aa3920;
+  color: var(--error);
   margin-top: 6px;
 }
 #routing-status[aria-busy="true"] {
@@ -790,7 +864,7 @@ body.map-expanded {
   color: #e0e6eb;
 }
 .button.secondary {
-  background: white;
+  background: var(--surface);
   color: var(--ink);
 }
 .button.stop {
@@ -800,7 +874,7 @@ body.map-expanded {
 }
 .button.stop:hover {
   background: #25405d;
-  border-color: white;
+  border-color: var(--line);
 }
 .saved-plans .button {
   width: 100%;
@@ -819,7 +893,7 @@ body.map-expanded {
 }
 .run-state {
   padding: 36px;
-  background: var(--ink);
+  background: var(--inverse);
   color: white;
 }
 .run-state .eyebrow {
@@ -984,7 +1058,7 @@ body.map-expanded {
   padding-top: 24px;
   padding-bottom: 16px;
   position: relative;
-  background: #eaf0f5;
+  background: var(--metric);
 }
 .metric.major > span:first-child {
   display: flex;
@@ -1005,11 +1079,11 @@ body.map-expanded {
 .pace-track {
   height: 9px;
   margin-top: 18px;
-  border-bottom: 1px solid #bdccd8;
+  border-bottom: 1px solid var(--ruler);
   background: repeating-linear-gradient(
     90deg,
-    #bdccd8 0,
-    #bdccd8 1px,
+    var(--ruler) 0,
+    var(--ruler) 1px,
     transparent 1px,
     transparent 12px
   );
@@ -1091,12 +1165,12 @@ body[data-run-phase="acquiring"] .gps-status {
 .history-empty {
   grid-column: 1/-1;
   padding: 26px;
-  border: 1px dashed #b8c8d5;
+  border: 1px dashed var(--line);
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 20px;
-  background: #f8fafc;
+  background: var(--surface);
 }
 .history-empty .icon {
   width: 38px;
@@ -1117,7 +1191,7 @@ body[data-run-phase="acquiring"] .gps-status {
   grid-template-columns: 1fr 150px;
   gap: 16px;
   padding: 22px;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
 }
@@ -1220,7 +1294,7 @@ dialog {
   padding: 28px;
   width: min(440px, calc(100vw - 32px));
   color: var(--ink);
-  background: white;
+  background: var(--surface);
   box-shadow: 0 20px 100px #172c4530;
 }
 dialog::backdrop {
@@ -1239,7 +1313,7 @@ dialog form {
   gap: 10px;
 }
 dialog button[value="confirm"] {
-  background: var(--ink);
+  background: var(--inverse);
   color: white;
 }
 .map-dialog {
@@ -1591,7 +1665,7 @@ dialog button[value="confirm"] {
     bottom: 0;
     min-height: 65px;
     padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
-    background: #fffffff5;
+    background: var(--overlay);
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--line);
     z-index: 1200;
@@ -1647,7 +1721,7 @@ dialog button[value="confirm"] {
     right: 0;
     margin: 0;
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-    background: var(--ink);
+    background: var(--inverse);
     box-shadow: 0 -4px 24px #172c451a;
   }
 }

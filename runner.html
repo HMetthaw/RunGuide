@@ -7,6 +7,26 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#172c45" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Apply before rendering so a saved dark theme never flashes white.
+      (() => {
+        let saved;
+        try {
+          saved = localStorage.getItem("runguide.theme");
+        } catch {}
+        const theme =
+          saved === "dark" || saved === "light"
+            ? saved
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "dark" ? "#101922" : "#172c45";
+      })();
+    </script>
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
@@ -71,10 +91,30 @@
           Historie <b id="history-count">0</b>
         </button>
       </nav>
-      <a class="account-link" href="#account" aria-label="Můj prostor"
-        ><svg class="icon" aria-hidden="true"><use href="#icon-user" /></svg
-        ><span>Můj prostor</span></a
-      >
+      <div class="header-actions">
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          aria-label="Tmavý režim"
+          aria-pressed="false"
+          title="Přepnout vzhled"
+        >
+          <svg class="icon theme-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
+          </svg>
+          <svg class="icon theme-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+            />
+          </svg>
+        </button>
+        <a class="account-link" href="#account" aria-label="Můj prostor"
+          ><svg class="icon" aria-hidden="true"><use href="#icon-user" /></svg
+          ><span>Můj prostor</span></a
+        >
+      </div>
     </header>
     <main id="main">
       <div id="app-status" class="app-notice" role="status" hidden></div>
