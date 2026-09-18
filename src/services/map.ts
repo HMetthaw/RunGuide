@@ -3,15 +3,16 @@ import "leaflet/dist/leaflet.css";
 import type { Point, TracePoint } from "../types/models";
 
 export class RouteMap {
-  private map = L.map("map", { zoomControl: false }).setView(
-    [49.78, 18.43],
-    13,
-  );
+  private map = L.map("map", {
+    zoomControl: false,
+    scrollWheelZoom: false,
+  }).setView([49.78, 18.43], 13);
   private route = L.featureGroup().addTo(this.map);
   private trace = L.featureGroup().addTo(this.map);
   private position = L.featureGroup().addTo(this.map);
   constructor(onPoint: (p: Point) => void, onTileError: () => void) {
     L.control.zoom({ position: "bottomright" }).addTo(this.map);
+    this.map.attributionControl.setPosition("bottomleft");
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution:
@@ -26,13 +27,13 @@ export class RouteMap {
   setRoute(points: Point[], fit = false, waypoints: Point[] = points) {
     this.route.clearLayers();
     if (points.length > 1)
-      L.polyline(points, { color: "#c54c27", weight: 5 }).addTo(this.route);
+      L.polyline(points, { color: "#df4d27", weight: 5 }).addTo(this.route);
     waypoints.forEach((p, i) =>
       L.circleMarker(p, {
         radius: i === 0 ? 7 : 4,
-        color: "#102e27",
-        weight: 2,
-        fillColor: i === 0 ? "#d8ff51" : "#ff754c",
+        color: i === 0 ? "#172c45" : "#df4d27",
+        weight: 3,
+        fillColor: "#ffffff",
         fillOpacity: 1,
       }).addTo(this.route),
     );
@@ -74,5 +75,8 @@ export class RouteMap {
   centerPoint(): Point {
     const p = this.map.getCenter();
     return { lat: p.lat, lng: p.lng };
+  }
+  resize() {
+    this.map.invalidateSize({ pan: false });
   }
 }

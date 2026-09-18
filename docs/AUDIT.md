@@ -27,7 +27,7 @@
 ## Provedené ověření
 
 - TypeScript strict, ESLint a produkční build.
-- 50 automatických testů jádra včetně pěšího routingu, rušení starých výpočtů, chyb služby a opětovného načtení plánů (ověřeno 18. 9. 2026).
+- 51 automatických testů včetně pěšího routingu, rušení starých výpočtů, chyb služby, opětovného načtení plánů a rozšíření mapy se zachováním DOM a návratem fokusu (ověřeno 18. 9. 2026).
 - Databázové testy běží v PostgreSQL přes PGlite s rolí `authenticated`, dvěma schválenými uživateli a třetím bez pozvánky. Kontrolují vlastní zápis, cizí čtení/změnu/smazání, podvržení vlastníka, cizí trasu, anonymní přístup, sebe-pozvání a odebrání přístupu. Supabase `auth.uid()` je v testu nahrazeno čtením testovacího JWT claimu; nejde o živý test vzdálené služby.
 - Integrační DOM test: neplatný cíl → zamítnutá GPS → start → simulovaný běh → pauza → pokračování → chyba kvóty → opakované uložení → skutečné dva segmenty v mapce → poznámka obsahující HTML → smazání. GPS a mapa jsou zde testovací adaptéry.
 - Skutečný prohlížeč: změna cíle, body v Leafletu, uložení a načtení plánu, mobilní rozložení 390 px bez vodorovného přetečení, konzole bez chyb.
@@ -50,3 +50,10 @@
 - [Geolocation API](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API/Using_the_Geolocation_API)
 - [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Nasazení Vite na GitHub Pages](https://vite.dev/guide/static-deploy)
+
+## Mobilní redesign · 18. 9. 2026
+
+- Nový plánovač s rozšířitelnou mapou, kompaktním nastavením cíle, spodní navigací a výraznými metrikami. Při aktivním běhu zůstává ovládání pauzy a ukončení u spodního okraje.
+- Ověřeny šířky 320, 390 a 1440 px; mobil bez vodorovného přetečení, nativní mapový dialog a návrat klávesnicového fokusu. Živý pěší routing v prohlížeči vrátil trasu 0,75 km.
+- TypeScript, ESLint, 51 testů a produkční build prošly. Nasazena Cloudflare verze 70f5173a-2e25-4e54-a9c3-ed00493391cb. Na veřejné adrese ověřen přechod z předchozí PWA přes tlačítko Aktualizovat aplikaci na nový vzhled.
+

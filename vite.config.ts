@@ -16,8 +16,8 @@ export default defineConfig({
         start_url: "./runner.html",
         scope: "./",
         display: "standalone",
-        background_color: "#102e27",
-        theme_color: "#102e27",
+        background_color: "#f1f5f8",
+        theme_color: "#172c45",
         icons: [192, 512].map((size) => ({
           src: `icons/icon-${size}.png`,
           sizes: `${size}x${size}`,

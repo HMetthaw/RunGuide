@@ -19,6 +19,7 @@ import { CloudRepository } from "./services/cloud";
 import { download, gpx } from "./services/export";
 import { historyCard } from "./services/history";
 import { registerApp } from "./services/pwa";
+import { setupPlannerInterface } from "./services/planner-ui";
 import "./app.css";
 import "@fontsource/barlow-condensed/latin-ext-800.css";
 import "@fontsource/barlow-condensed/latin-800.css";
@@ -110,6 +111,7 @@ const map = new RouteMap(addWaypoint, () =>
     "Mapový podklad není dostupný. Uložená trasa a měření zůstávají použitelné.",
   ),
 );
+setupPlannerInterface(() => map.resize());
 
 function addWaypoint(point: Point) {
   if (active()) return;
@@ -131,10 +133,24 @@ function renderRoute(fit = false) {
   map.setRoute(route, fit, planner.routing?.waypoints ?? planner.waypoints);
   const meters = planner.distanceMeters,
     target = goal();
+  const count = planner.waypoints.length;
+  const pointLabel =
+    count === 1 ? "bod" : count >= 2 && count <= 4 ? "body" : "bodů";
   text(
     "route-summary",
-    `${planner.waypoints.length} bodů · ${planner.blocked ? "čeká na výpočet" : `${formatDistance(meters)} km po cestách`}`,
+    count
+      ? `${count} ${pointLabel} · ${planner.blocked ? "čeká na výpočet" : `${formatDistance(meters)} km`}`
+      : "Vyber start v mapě",
   );
+  text(
+    "map-hint",
+    active()
+      ? "Běh probíhá · plán je uzamčený"
+      : count
+        ? "Dalším ťuknutím přidej bod"
+        : "Ťukni do mapy a vyber start",
+  );
+  element("map-stage").dataset.state = planner.status;
   text("route-distance", planner.blocked ? "—" : formatDistance(meters));
   text("routing-status", planner.message);
   element("routing-status").setAttribute(
@@ -176,6 +192,9 @@ function renderRoute(fit = false) {
 function renderRouteControls() {
   for (const id of ["save-route", "use-route-distance"])
     input(id).disabled = active() || planner.blocked || !planner.routing;
+  input("undo-route").disabled = active() || !planner.waypoints.length;
+  input("clear-route").disabled = active() || !planner.waypoints.length;
+  input("close-loop").disabled = active() || planner.waypoints.length < 2;
 }
 function renderPlans() {
   const select = element<HTMLSelectElement>("saved-routes");
@@ -194,9 +213,11 @@ function renderHistory() {
   const list = element("history-list");
   list.replaceChildren();
   if (!runs.length) {
-    const p = document.createElement("p");
-    p.textContent = "První stopa na tebe teprve čeká.";
-    list.append(p);
+    const empty = document.createElement("div");
+    empty.className = "history-empty";
+    empty.innerHTML =
+      '<svg class="icon" aria-hidden="true"><use href="#icon-route"/></svg><div><strong>Tady začíná tvoje běžecká historie.</strong><p>Dokonči první běh. Jeho trasu, čas a tempo najdeš právě tady.</p></div>';
+    list.append(empty);
   }
   runs.forEach((run) =>
     list.append(
@@ -245,6 +266,7 @@ function renderHistory() {
   );
 }
 function renderRun() {
+  document.body.dataset.runPhase = runner.phase;
   const now = Date.now(),
     seconds = runner.elapsed(now),
     pace = runner.currentPace(now);
@@ -286,11 +308,11 @@ function renderRun() {
   for (const id of ["sync-cloud", "import-device", "logout"])
     input(id).disabled = active() || !!pendingRun || syncBusy;
   const labels = {
-    idle: "PŘIPRAVEN VYBĚHNOUT?",
-    acquiring: "HLEDÁM GPS.",
-    running: "BĚH BĚŽÍ.",
-    paused: "CHVÍLE NA PAUZU.",
-    finished: pendingRun ? "ULOŽENÍ ČEKÁ." : "BĚH DOKONČEN.",
+    idle: "Připraven vyběhnout?",
+    acquiring: "Hledám tvou polohu.",
+    running: "Drž si svoje tempo.",
+    paused: "Chvíle na nádech.",
+    finished: pendingRun ? "Ještě uložit běh." : "Dobrý běh. Hotovo.",
   };
   text("run-title", labels[runner.phase]);
   if (
@@ -503,7 +525,7 @@ action("locate-me", () => {
     notice("Poloha vyžaduje HTTPS a prohlížeč s podporou GPS.");
     return;
   }
-  text("planner-status", "Hledám polohu…");
+  text("location-status", "Hledám polohu…");
   navigator.geolocation.getCurrentPosition(
     (position) => {
       map.locate(
@@ -512,13 +534,13 @@ action("locate-me", () => {
         true,
       );
       text(
-        "planner-status",
+        "location-status",
         `Poloha nalezena, přesnost ±${Math.round(position.coords.accuracy)} metrů.`,
       );
     },
     () =>
       text(
-        "planner-status",
+        "location-status",
         "Polohu se nepodařilo načíst. Zkontroluj oprávnění webu.",
       ),
     { enableHighAccuracy: true, timeout: 15000 },
@@ -806,6 +828,7 @@ window.addEventListener("beforeunload", (event) => {
   if (active() || pendingRun) event.preventDefault();
 });
 function networkStatus() {
+  document.body.dataset.offline = String(!navigator.onLine);
   text(
     "offline-status",
     navigator.onLine

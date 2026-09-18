@@ -94,7 +94,7 @@ it("plans, saves and reloads a road route; blocks partial/error routes and retri
   expect($("route-distance").textContent).toBe("0,59");
   expect(mocks.calculate).toHaveBeenCalledTimes(1);
   await click("undo-route");
-  expect($("route-summary").textContent).toContain("1 bodů");
+  expect($("route-summary").textContent).toContain("1 bod");
   expect(mocks.setRoute).toHaveBeenLastCalledWith([], false, [a]);
   mocks.addPoint!(b);
   mocks.calculate.mockRejectedValueOnce(new TypeError("offline"));
