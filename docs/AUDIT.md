@@ -27,7 +27,7 @@
 ## Provedené ověření
 
 - TypeScript strict, ESLint a produkční build.
-- 35 automatických testů jádra (GPS/tempo/navigace, hlasové priority, úložiště, UI, cloudové identity a databáze).
+- 50 automatických testů jádra včetně pěšího routingu, rušení starých výpočtů, chyb služby a opětovného načtení plánů (ověřeno 18. 9. 2026).
 - Databázové testy běží v PostgreSQL přes PGlite s rolí `authenticated`, dvěma schválenými uživateli a třetím bez pozvánky. Kontrolují vlastní zápis, cizí čtení/změnu/smazání, podvržení vlastníka, cizí trasu, anonymní přístup, sebe-pozvání a odebrání přístupu. Supabase `auth.uid()` je v testu nahrazeno čtením testovacího JWT claimu; nejde o živý test vzdálené služby.
 - Integrační DOM test: neplatný cíl → zamítnutá GPS → start → simulovaný běh → pauza → pokračování → chyba kvóty → opakované uložení → skutečné dva segmenty v mapce → poznámka obsahující HTML → smazání. GPS a mapa jsou zde testovací adaptéry.
 - Skutečný prohlížeč: změna cíle, body v Leafletu, uložení a načtení plánu, mobilní rozložení 390 px bez vodorovného přetečení, konzole bez chyb.
@@ -35,6 +35,7 @@
 - Celkový build zahrnuje i ověření existence všech assetů obou stránek. Opravený landing vstup je modul pro Vite; původní `/app.js` a `/public-config.js` se do balíčku nedostávaly. Ověřeno také sestavení s base `/RunGuide/` pro GitHub Pages.
 - `npm audit --omit=dev --audit-level=moderate`: žádné nahlášené zranitelnosti produkčních závislostí v době kontroly. Nejde o bezpečnostní audit celé aplikace.
 - Aktualizace ze starého cache-first prototypu proběhla po zavření a znovuotevření karty. Data a původní plán zůstaly.
+- 18. 9. 2026 nasazeno na Cloudflare Worker `runguide-landing`, verze `e043b427-0127-4f1d-bb48-4c02055af146`. HTTPS `/`, `/runner` i přesměrování `/runner.html` vrací 200; skripty, styly, manifest, service worker a ikony odpovídají aktuálnímu buildu. V prohlížeči ověřena nabídka aktualizace původní PWA a přechod tlačítkem na nový pěší plánovač, bez chyb v konzoli.
 
 ## Zbývá před reálnou betou
 
@@ -42,7 +43,7 @@
 - Založit/propojit Supabase, aplikovat migrace, ověřit dvě skutečné identity a obnovu session, smazání účtu a export/smazání v cloudu.
 - Živý endpoint wishlistu a zápis/read-back; tuto část řeší samostatný chat a jeho `docs/LANDING_AUDIT.md`.
 - Pěší routing je doplněný přes OSRM / FOSSGIS (viz README); terénní ověření navigace a plná cloudová synchronizace plánů/editací zbývají.
-- GitHub remote, veřejné HTTPS nasazení a ověření instalace z telefonu.
+- GitHub remote a ověření instalace z telefonu; veřejné HTTPS nasazení na Cloudflare je hotové.
 
 ## Technické podklady
 

@@ -34,7 +34,7 @@ Pěší routing používá `https://routing.openstreetmap.de/routed-foot/route/v
 - Web Geolocation API a Web Speech API pro GPS a hlasové pokyny
 - Leaflet + OpenStreetMap pro mapu a tvorbu tras
 - Supabase pro přihlášení, soukromá data a budoucí soutěžní backend
-- GitHub Pages pro hostování PWA
+- Cloudflare Workers Static Assets pro hostování PWA; připravená je i alternativa GitHub Pages
 
 ## Lokální spuštění
 
@@ -54,7 +54,19 @@ npm run preview
 
 `check` provede TypeScript, ESLint, testy a produkční build. `preview` otevře build na `http://127.0.0.1:4173/runner.html`. PWA cache je aktivní pouze v produkčním buildu. Starý prototyp se může při prvním otevření načíst z původní cache; zavři všechny jeho karty a znovu otevři. Nová verze aktualizace nabízí mimo rozběhnutý běh.
 
-Manifest i service worker generuje Vite do `dist/`; neupravuj je ručně. CI je v `.github/workflows/check.yml`, ručně spouštěné nasazení Pages v `.github/workflows/pages.yml`. GitHub remote ani veřejná adresa zatím nejsou založené. Pages workflow počítá s adresou `https://uživatel.github.io/název-repozitáře/`; pro vlastní doménu nastav `BASE_PATH=/`.
+Manifest i service worker generuje Vite do `dist/`; neupravuj je ručně. Veřejná aplikace je na [runguide-landing.holes-matej1.workers.dev/runner](https://runguide-landing.holes-matej1.workers.dev/runner). Cloudflare Worker `runguide-landing` hostuje pouze statický obsah `dist/`, konfigurace je ve `wrangler.jsonc`. Cesty `/runner` i `/runner.html` vedou na běžeckou aplikaci.
+
+Pro aktualizaci Cloudflare nejdřív ověř přihlášení, potom sestav a nasaď čerstvý výstup:
+
+```bash
+npx wrangler@4.134.0 whoami
+npm run check
+npx wrangler@4.134.0 deploy --config wrangler.jsonc
+```
+
+Na Windows při problému s certifikáty nastav v PowerShellu `$env:NODE_OPTIONS='--use-system-ca'`. Cloudflare tokeny patří do přihlášení Wrangleru nebo proměnných prostředí, nikdy do repozitáře. Build pro Workers používá výchozí `BASE_PATH=./`; nenasazuj sem výstup sestavený pro podadresář GitHub Pages.
+
+CI je v `.github/workflows/check.yml`, alternativní ručně spouštěné nasazení Pages v `.github/workflows/pages.yml`. GitHub remote zatím není nastavený. Pages workflow počítá s adresou `https://uživatel.github.io/název-repozitáře/`; pro vlastní doménu nastav `BASE_PATH=/`.
 
 Cloud připrav podle [docs/BACKEND.md](docs/BACKEND.md). Veřejné `VITE_` hodnoty se zapisují do `.env` nebo GitHub repository variables; nikdy do nich nedávej service-role/secret klíč.
 
