@@ -27,27 +27,4 @@ export function setupPlannerInterface(resizeMap: () => void) {
     expanded(false);
     toggle.focus();
   });
-
-  if ("IntersectionObserver" in window) {
-    const sections = ["planner", "run-panel", "history", "account"];
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        const current = sections.find((id) => visible.has(id));
-        document
-          .querySelectorAll<HTMLAnchorElement>(".mobile-nav a")
-          .forEach((link) => {
-            if (link.hash === `#${current}`)
-              link.setAttribute("aria-current", "location");
-            else link.removeAttribute("aria-current");
-          });
-      },
-      { rootMargin: "-80px 0px -45% 0px", threshold: 0 },
-    );
-    for (const id of sections) observer.observe(document.getElementById(id)!);
-  }
 }

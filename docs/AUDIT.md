@@ -64,3 +64,12 @@
 - Tmavá paleta pokrývá mapový podklad, formuláře, statistiky, historii, dialogy a ovládání. Mapa používá stávající OpenStreetMap podklad s filtrem pouze na dlaždicích.
 - Prošly TypeScript, ESLint, 54 testů a produkční build. V prohlížeči ověřeno přepínání, zachování volby po obnovení a šířky 320, 390 a 1440 px. Nasazena Cloudflare verze 10b84168-a49a-4cf1-9bc3-efac32a4b6d4.
 
+
+## Pět záložek aplikace · 18. 9. 2026
+
+- Přehled, Historie, prostřední Start, Profil a Menu jsou samostatné pohledy s URL fragmenty a podporou návratu prohlížečem. Start má kroky Trasa, Cíl a tempo, Běh. Mapa i běžící GPS zůstávají při přepínání zachované.
+- Přehled počítá aktuální místní kalendářní týden (od pondělí) nebo měsíc z uložených běhů, celkový čas a tempo vážené vzdáleností. Prázdná historie nevytváří ukázková data.
+- Profil ukládá jméno a týdenní cíl místně pod klíčem vlastníka. V menu jsou vzhled, zapamatované hlasové nastavení, záloha a stávající správa účtu. Cloudová synchronizace profilu není součástí této změny.
+- Prošlo 58 testů, TypeScript strict, ESLint a produkční build. Nové testy ověřují hranice období, oddělení profilů, navigaci a zachování GPS při přepnutí do menu. Skutečný prohlížeč: mobil 320/390 px, desktop 1440 px, světlý/tmavý režim a přenos pěší trasy 1,07 km do nastavení cíle.
+
+- Nasazeno na Cloudflare jako verze 932e4ddd-1954-48e6-bb95-ecd598d9ea35.

@@ -77,6 +77,6 @@ export class RouteMap {
     return { lat: p.lat, lng: p.lng };
   }
   resize() {
-    this.map.invalidateSize({ pan: false });
+    this.map.invalidateSize({ pan: true, animate: false });
   }
 }

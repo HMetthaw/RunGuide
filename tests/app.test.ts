@@ -103,6 +103,16 @@ it("runs the complete interface: invalid goal, denied GPS, run, pause, quota fai
   for (let i = 0; i <= 60; i++) await gps(i, i * 3);
   expect($("live-distance").textContent).toBe("0,18");
   expect($("live-pace").textContent).toBe("5:33");
+  const gpsStopsBeforeNavigation = vi.mocked(navigator.geolocation.clearWatch)
+    .mock.calls.length;
+  document.querySelector<HTMLAnchorElement>('[data-nav="menu"]')!.click();
+  expect(document.body.dataset.page).toBe("menu");
+  expect(document.body.dataset.runPhase).toBe("running");
+  expect(navigator.geolocation.clearWatch).toHaveBeenCalledTimes(
+    gpsStopsBeforeNavigation,
+  );
+  document.querySelector<HTMLAnchorElement>('[data-nav="start"]')!.click();
+  expect(document.body.dataset.step).toBe("run");
   await click("pause-run");
   expect($("resume-run").hidden).toBe(false);
   vi.setSystemTime(epoch + 120000);

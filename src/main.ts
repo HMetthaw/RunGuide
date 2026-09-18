@@ -21,7 +21,10 @@ import { historyCard } from "./services/history";
 import { registerApp } from "./services/pwa";
 import { setupPlannerInterface } from "./services/planner-ui";
 import { setupTheme } from "./services/theme";
+import { setupAppNavigation } from "./services/app-navigation";
+import { setupDashboard } from "./services/dashboard";
 import "./app.css";
+import "./pages.css";
 import "@fontsource/barlow-condensed/latin-ext-800.css";
 import "@fontsource/barlow-condensed/latin-800.css";
 import "@fontsource/manrope/latin-ext-400.css";
@@ -108,6 +111,12 @@ let wakeLock: WakeLockSentinel | null = null;
 let syncBusy = false;
 let identityReady = false;
 const voice = new VoiceGuide((message) => text("voice-copy", message));
+try {
+  voice.enabled = storagePort.getItem("runguide.voice") !== "false";
+  input("voice-enabled").checked = voice.enabled;
+} catch {
+  /* The control still works when browser storage is unavailable. */
+}
 const map = new RouteMap(addWaypoint, () =>
   text(
     "map-status",
@@ -115,6 +124,12 @@ const map = new RouteMap(addWaypoint, () =>
   ),
 );
 setupPlannerInterface(() => map.resize());
+const appNavigation = setupAppNavigation(() => map.resize(), active);
+const dashboard = setupDashboard(
+  storagePort,
+  () => repository.runs(),
+  () => repository.key,
+);
 
 function addWaypoint(point: Point) {
   if (active()) return;
@@ -155,6 +170,14 @@ function renderRoute(fit = false) {
   );
   element("map-stage").dataset.state = planner.status;
   text("route-distance", planner.blocked ? "—" : formatDistance(meters));
+  text(
+    "run-preparation-summary",
+    !target
+      ? "Nejdřív oprav vzdálenost nebo čas v kroku Cíl a tempo."
+      : planner.blocked
+        ? "Trasa není připravená. Vrať se na mapu a dokonči výpočet."
+        : `Cíl ${target.distanceKm.toLocaleString("cs")} km · ${target.durationMinutes.toLocaleString("cs")} min · tempo ${formatPace(targetPace(target))} / km`,
+  );
   text("routing-status", planner.message);
   element("routing-status").setAttribute(
     "aria-busy",
@@ -198,6 +221,16 @@ function renderRouteControls() {
   input("undo-route").disabled = active() || !planner.waypoints.length;
   input("clear-route").disabled = active() || !planner.waypoints.length;
   input("close-loop").disabled = active() || planner.waypoints.length < 2;
+  input("goal-use-route").disabled =
+    active() || planner.blocked || !planner.routing;
+  text(
+    "goal-route-copy",
+    planner.blocked
+      ? "Trasa čeká na výpočet. Vrať se na mapu a zkontroluj ji."
+      : planner.routing
+        ? `Naplánovaná trasa: ${formatDistance(planner.distanceMeters)} km.`
+        : "Běžíš bez naplánované trasy. GPS zaznamená tvůj skutečný pohyb.",
+  );
 }
 function renderPlans() {
   const select = element<HTMLSelectElement>("saved-routes");
@@ -207,6 +240,7 @@ function renderPlans() {
     .forEach((plan) => select.add(new Option(plan.name, plan.id)));
 }
 function renderHistory() {
+  dashboard.render();
   const runs = repository.runs();
   text("history-count", String(runs.length));
   text(
@@ -270,6 +304,12 @@ function renderHistory() {
 }
 function renderRun() {
   document.body.dataset.runPhase = runner.phase;
+  show("active-run-link", active() || !!pendingRun);
+  show("run-preparation-summary", !active());
+  text(
+    "start-title",
+    active() ? "Tvůj běh právě teď." : "Připrav si svůj běh.",
+  );
   const now = Date.now(),
     seconds = runner.elapsed(now),
     pace = runner.currentPace(now);
@@ -624,7 +664,7 @@ action("start-run", () => {
   );
   voice.speak("Hledám GPS. Při běhu nech aplikaci otevřenou.");
   beginGps();
-  element("run-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  appNavigation.navigate("run");
 });
 action("pause-run", () => {
   runner.pause(Date.now());
@@ -680,6 +720,7 @@ action("restore-run", () => {
   renderRoute(true);
   renderRun();
   text("gps-status", "Běh obnovený v pauze. Až budeš připravený, pokračuj.");
+  appNavigation.navigate("run");
 });
 action("discard-draft", async () => {
   if (
@@ -695,6 +736,11 @@ action("discard-draft", async () => {
 });
 input("voice-enabled").addEventListener("change", () => {
   voice.enabled = input("voice-enabled").checked;
+  try {
+    storagePort.setItem("runguide.voice", String(voice.enabled));
+  } catch {
+    /* Keep this session's choice. */
+  }
   if (!voice.enabled) voice.cancel();
 });
 action("test-voice", () => {
@@ -709,10 +755,7 @@ text(
     ? "Před během vyzkoušej hlas se svými sluchátky."
     : "Tento prohlížeč nemá hlasový výstup. Pokyny uvidíš na displeji.",
 );
-action("history-button", () => {
-  show("history", true);
-  element("history").scrollIntoView({ behavior: "smooth" });
-});
+action("goal-use-route", () => input("use-route-distance").click());
 action("export-all", () =>
   download(
     "runguide-soukroma-zaloha.json",
@@ -733,6 +776,7 @@ async function updateAccount() {
   renderRoute();
   await cloud.refreshIdentity();
   repository = new LocalRepository(storagePort, cloud.owner || "device");
+  dashboard.loadProfile();
   identityReady = true;
   renderPlans();
   renderHistory();

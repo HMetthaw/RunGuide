@@ -39,519 +39,834 @@
       aria-hidden="true"
     >
       <symbol id="icon-route" viewBox="0 0 24 24">
-        <circle cx="6" cy="6" r="3" />
-        <circle cx="18" cy="18" r="3" />
-        <path d="M9 6h7a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8" />
+        <circle cx="6" cy="6" r="3"></circle>
+        <circle cx="18" cy="18" r="3"></circle>
+        <path d="M9 6h7a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8"></path>
       </symbol>
       <symbol id="icon-arrow" viewBox="0 0 24 24">
-        <path d="M4 12h16m-6-6 6 6-6 6" />
+        <path d="M4 12h16m-6-6 6 6-6 6"></path>
       </symbol>
       <symbol id="icon-location" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="7" />
-        <circle cx="12" cy="12" r="2" />
-        <path d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+        <circle cx="12" cy="12" r="7"></circle>
+        <circle cx="12" cy="12" r="2"></circle>
+        <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
       </symbol>
       <symbol id="icon-undo" viewBox="0 0 24 24">
-        <path d="m9 4-5 5 5 5M4 9h10a6 6 0 0 1 0 12" />
+        <path d="m9 4-5 5 5 5M4 9h10a6 6 0 0 1 0 12"></path>
       </symbol>
       <symbol id="icon-expand" viewBox="0 0 24 24">
-        <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+        <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"></path>
       </symbol>
       <symbol id="icon-loop" viewBox="0 0 24 24">
-        <path d="M19 7a8 8 0 1 0 1 8M19 2v5h-5" />
+        <path d="M19 7a8 8 0 1 0 1 8M19 2v5h-5"></path>
       </symbol>
       <symbol id="icon-run" viewBox="0 0 24 24">
-        <circle cx="15" cy="4" r="2" />
-        <path d="m8 9 4-2 4 4h4M12 7l-3 7 6 2-2 6M9 14l-3 5H2" />
+        <circle cx="15" cy="4" r="2"></circle>
+        <path d="m8 9 4-2 4 4h4M12 7l-3 7 6 2-2 6M9 14l-3 5H2"></path>
       </symbol>
       <symbol id="icon-history" viewBox="0 0 24 24">
-        <path d="M3 11a9 9 0 1 1 2 7M3 5v6h6m3-4v6l4 2" />
+        <path d="M3 11a9 9 0 1 1 2 7M3 5v6h6m3-4v6l4 2"></path>
       </symbol>
       <symbol id="icon-user" viewBox="0 0 24 24">
-        <circle cx="12" cy="7" r="4" />
-        <path d="M4 22v-3a8 8 0 0 1 16 0v3" />
+        <circle cx="12" cy="7" r="4"></circle>
+        <path d="M4 22v-3a8 8 0 0 1 16 0v3"></path>
       </symbol>
       <symbol id="icon-audio" viewBox="0 0 24 24">
-        <path d="M3 14v-4m4 9V5m5 17V2m5 17V5m4 9v-4" />
+        <path d="M3 14v-4m4 9V5m5 17V2m5 17V5m4 9v-4"></path>
       </symbol>
       <symbol id="icon-save" viewBox="0 0 24 24">
-        <path d="M6 3h12v19l-6-4-6 4Z" />
+        <path d="M6 3h12v19l-6-4-6 4Z"></path>
+      </symbol>
+      <symbol id="icon-overview" viewBox="0 0 24 24">
+        <path d="M4 20V10m8 10V4m8 16v-7"></path>
+      </symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24">
+        <path d="M4 6h16M4 12h16M4 18h16"></path>
       </symbol>
     </svg>
     <a class="skip" href="#main">Přeskočit na obsah</a>
     <header class="app-header">
-      <a class="brand" href="./index.html" aria-label="RunGuide — úvod"
+      <a
+        class="brand"
+        href="#overview"
+        aria-label="RunGuide — přehled"
+        data-route=""
         ><span class="brand-mark">R<span class="brand-dot"></span></span
         ><span>RunGuide<small>BĚŽECKÝ NAVIGÁTOR</small></span></a
       >
-      <nav class="desktop-nav" aria-label="Hlavní navigace">
-        <a class="nav-link" href="#planner">Naplánovat</a>
-        <a class="nav-link" href="#run-panel">Můj běh</a>
-        <button id="history-button" class="nav-link" type="button">
-          Historie <b id="history-count">0</b>
-        </button>
-      </nav>
+
       <div class="header-actions">
-        <button
-          id="theme-toggle"
-          class="theme-toggle"
-          type="button"
-          aria-label="Tmavý režim"
-          aria-pressed="false"
-          title="Přepnout vzhled"
-        >
-          <svg class="icon theme-moon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
-          </svg>
-          <svg class="icon theme-sun" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" />
-            <path
-              d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
-            />
-          </svg>
-        </button>
-        <a class="account-link" href="#account" aria-label="Můj prostor"
-          ><svg class="icon" aria-hidden="true"><use href="#icon-user" /></svg
-          ><span>Můj prostor</span></a
+        <a
+          class="account-link"
+          href="#profile"
+          aria-label="Můj profil"
+          data-route=""
+          ><svg class="icon" aria-hidden="true">
+            <use href="#icon-user"></use></svg
+          ><span>Můj profil</span></a
         >
       </div>
     </header>
     <main id="main">
-      <div id="app-status" class="app-notice" role="status" hidden></div>
-      <div id="recovery" class="app-notice" hidden>
+      <div id="app-status" class="app-notice" role="status" hidden=""></div>
+      <div id="recovery" class="app-notice" hidden="">
         <strong>Navážeme na tvůj běh?</strong>
         <p>Máš tu nedokončený záznam. Obnovíme ho pozastavený.</p>
         <button id="restore-run" class="button primary" type="button">
           Obnovit běh</button
         ><button id="discard-draft" type="button">Zahodit záznam</button>
       </div>
-      <section class="run-head" aria-labelledby="page-title">
-        <div>
-          <p class="eyebrow">TVOJE TRASA. TVOJE TEMPO.</p>
-          <h1 id="page-title">Ven. <span>Po svém.</span></h1>
-          <p class="intro">Vyber cestu. Nastav tempo. Zbytek nech na nás.</p>
-        </div>
-        <div class="head-note">
-          <svg class="icon" aria-hidden="true"><use href="#icon-audio" /></svg>
-          <div>
-            <strong>Oči na cestě.</strong
-            ><span>České hlasové pokyny do sluchátek.</span>
-          </div>
-        </div>
-      </section>
+
       <div class="connection-bar">
         <p id="offline-status" class="connection-status">
           Soukromý záznam v tomto zařízení.
         </p>
-        <button id="update-app" class="update-button" type="button" hidden>
-          Aktualizovat aplikaci</button
-        ><span class="edition">RUNGUIDE / OSOBNÍ REŽIM</span>
+        <button id="update-app" class="update-button" type="button" hidden="">
+          Aktualizovat aplikaci
+        </button>
       </div>
-      <section id="planner" class="planner" aria-label="Plánování trasy">
-        <aside class="route-side">
-          <form id="goal-form" class="goal-card" novalidate>
-            <div class="section-kicker">
-              <span class="step-number">1</span>
-              <h2>Dej běhu cíl</h2>
+      <a
+        href="#run"
+        data-route=""
+        id="active-run-link"
+        class="active-run-link"
+        hidden=""
+        ><svg class="icon" aria-hidden="true"><use href="#icon-run"></use></svg
+        ><span>Běh je rozpracovaný</span><strong>Zpět k běhu →</strong></a
+      >
+      <section
+        class="app-page overview-page"
+        data-page="overview"
+        aria-labelledby="overview-greeting"
+      >
+        <div class="page-heading">
+          <p class="eyebrow">TVŮJ OSOBNÍ PŘEHLED</p>
+          <h1 id="overview-greeting" data-page-title="" tabindex="-1">
+            Tvůj běh. Tvůj rytmus.
+          </h1>
+          <p>Malé kroky. Dobrý pocit. Kilometry, které jsou tvoje.</p>
+        </div>
+        <div class="period-picker" aria-label="Období přehledu">
+          <button type="button" data-period="week" aria-pressed="true">
+            Tento týden</button
+          ><button type="button" data-period="month" aria-pressed="false">
+            Tento měsíc
+          </button>
+        </div>
+        <div class="overview-grid">
+          <div class="distance-card">
+            <div>
+              <span id="summary-period-label">Tento týden</span
+              ><svg class="icon" aria-hidden="true">
+                <use href="#icon-route"></use>
+              </svg>
             </div>
-            <fieldset id="goal-fields">
-              <legend class="sr-only">Cíl běhu</legend>
-              <div class="goal-grid">
-                <label for="goal-distance"
-                  >Vzdálenost
-                  <span class="input-wrap"
-                    ><input
-                      id="goal-distance"
-                      type="number"
-                      min="0.1"
-                      max="100"
-                      step="0.1"
-                      value="5"
-                      required
-                      inputmode="decimal"
-                    /><span>km</span></span
-                  ></label
-                >
-                <label for="goal-time"
-                  >Čas
-                  <span class="input-wrap"
-                    ><input
-                      id="goal-time"
-                      type="number"
-                      min="1"
-                      max="1440"
-                      step="0.5"
-                      value="30"
-                      required
-                      inputmode="decimal"
-                    /><span>min</span></span
-                  ></label
-                >
-              </div>
-            </fieldset>
-            <div class="target-pace">
-              <span>Cílové tempo</span
-              ><strong
-                ><span id="target-pace">6:00</span><small> / km</small></strong
-              >
-            </div>
-            <p id="goal-error" role="status"></p>
-          </form>
-          <div class="route-controls">
-            <div class="section-kicker">
-              <span class="step-number">2</span>
-              <h2>Najdi svou cestu</h2>
-            </div>
-            <p class="route-intro">
-              Ťukni na start a další místa v mapě. Spojíme je po pěších cestách.
-            </p>
-            <div class="route-metrics">
-              <div class="route-length">
-                <span>Délka trasy</span
-                ><strong
-                  ><span id="route-distance">0,00</span
-                  ><small> km</small></strong
-                >
-              </div>
-              <div class="route-difference">
-                <span>Od cíle</span
-                ><strong
-                  ><span id="route-difference">−5,00</span
-                  ><small> km</small></strong
-                >
-              </div>
-            </div>
-            <button
-              id="use-route-distance"
-              class="use-distance"
-              type="button"
-              data-route-edit
-            >
-              Použít délku trasy jako cíl <span aria-hidden="true">↗</span>
-            </button>
-            <div class="route-actions">
-              <button id="close-loop" type="button" data-route-edit>
-                <svg class="icon" aria-hidden="true">
-                  <use href="#icon-loop" /></svg
-                >Zpět na start
-              </button>
-              <button id="add-center" type="button" data-route-edit>
-                <span aria-hidden="true">＋</span>Přidat střed
-              </button>
-              <button
-                id="clear-route"
-                class="text-button"
-                type="button"
-                data-route-edit
-              >
-                Vymazat plán
-              </button>
-            </div>
-            <details class="saved-plans">
-              <summary>
-                <svg class="icon" aria-hidden="true">
-                  <use href="#icon-save" /></svg
-                >Uložit nebo otevřít trasu<span
-                  class="disclosure"
-                  aria-hidden="true"
-                  >＋</span
-                >
-              </summary>
-              <div class="saved-plans-body">
-                <label class="stack-label" for="route-name"
-                  >Název trasy<input
-                    id="route-name"
-                    maxlength="100"
-                    placeholder="Třeba ranní okruh"
-                    data-route-edit
-                /></label>
-                <button
-                  id="save-route"
-                  class="button secondary"
-                  type="button"
-                  data-route-edit
-                >
-                  Uložit trasu
-                </button>
-                <p id="planner-status" class="status" aria-live="polite"></p>
-                <label class="stack-label" for="saved-routes"
-                  >Moje uložené trasy<select id="saved-routes" data-route-edit>
-                    <option value="">Vyber trasu</option>
-                  </select></label
-                >
-                <button
-                  id="delete-plan"
-                  class="text-button"
-                  type="button"
-                  data-route-edit
-                >
-                  Smazat vybraný plán
-                </button>
-              </div>
-            </details>
-            <a class="prepare-link" href="#run-panel"
-              >Připravit se na běh<svg class="icon" aria-hidden="true">
-                <use href="#icon-arrow" /></svg
+            <p><strong id="summary-distance">0,00</strong><span>km</span></p>
+            <span id="summary-empty"></span
+            ><a href="#start" data-route="" class="button primary"
+              >Naplánovat běh
+              <svg class="icon" aria-hidden="true">
+                <use href="#icon-arrow"></use></svg
             ></a>
           </div>
-        </aside>
-        <div id="map-stage" class="map-stage">
-          <div class="map-topline">
-            <span><i class="status-dot"></i>Pěší plánovač</span
-            ><button
-              id="expand-map"
-              type="button"
-              aria-expanded="false"
-              aria-controls="map-stage"
-            >
-              <svg class="icon" aria-hidden="true">
-                <use href="#icon-expand" /></svg
-              ><span id="expand-map-label">Zvětšit mapu</span>
-            </button>
-          </div>
-          <div class="map-wrap">
-            <div id="map" aria-label="Mapa pro tvorbu běžecké trasy"></div>
-            <div class="map-hud">
-              <span id="map-hint"><i></i>Ťukni do mapy a vyber start</span
-              ><button id="undo-route" type="button" data-route-edit>
-                <svg class="icon" aria-hidden="true">
-                  <use href="#icon-undo" /></svg
-                >Zpět
-              </button>
+          <div class="overview-detail">
+            <div class="summary-metrics">
+              <div>
+                <span>Počet běhů</span><strong id="summary-count">0</strong>
+              </div>
+              <div>
+                <span>Čas v pohybu</span><strong id="summary-time">0:00</strong>
+              </div>
+              <div>
+                <span>Průměrné tempo</span
+                ><strong
+                  ><span id="summary-pace">—</span><small> / km</small></strong
+                >
+              </div>
             </div>
-            <div class="map-footer">
-              <span id="route-summary">Zatím bez trasy</span
-              ><button id="locate-me" type="button">
-                <svg class="icon" aria-hidden="true">
-                  <use href="#icon-location" /></svg
-                >Moje poloha
-              </button>
-            </div>
+            <section class="activity-card" aria-labelledby="chart-title">
+              <div class="card-heading">
+                <h2 id="chart-title">Tvůj týden v pohybu</h2>
+                <span>km</span>
+              </div>
+              <div id="activity-chart" class="activity-chart"></div>
+            </section>
           </div>
-          <div class="map-feedback">
+        </div>
+        <div class="overview-bottom">
+          <section class="weekly-card">
+            <div class="card-heading">
+              <h2>Týdenní cíl</h2>
+              <a href="#profile" data-route="">Upravit</a>
+            </div>
+            <div class="weekly-numbers">
+              <strong id="weekly-progress-copy">0 / 15 km</strong
+              ><span id="weekly-percent">0 %</span>
+            </div>
+            <progress
+              id="weekly-progress"
+              max="15000"
+              value="0"
+              aria-label="Splnění týdenního cíle"
+            ></progress>
+            <p>Vlastní tempo, vlastní cíl. Počítá se každý běh.</p>
+          </section>
+          <a href="#history" data-route="" class="latest-card"
+            ><span>POSLEDNÍ BĚH</span
+            ><strong id="latest-run">Tvoje první trasa začíná tady.</strong>
+            <p id="latest-date"></p>
             <svg class="icon" aria-hidden="true">
-              <use href="#icon-route" />
-            </svg>
-            <div>
-              <p id="routing-status" role="status" aria-live="polite"></p>
-              <p id="map-status" role="status"></p>
-              <p id="location-status" role="status"></p>
-            </div>
-            <button id="retry-route" type="button" data-route-edit hidden>
-              Zkusit znovu
-            </button>
-          </div>
-          <div class="map-attribution">
-            <span
-              >Trasy:
-              <a
-                href="https://routing.openstreetmap.de/about.html"
-                target="_blank"
-                rel="noopener"
-                >OSRM / FOSSGIS</a
+              <use href="#icon-arrow"></use></svg
+          ></a>
+        </div>
+      </section>
+      <section
+        class="app-page start-page"
+        data-page="start"
+        hidden=""
+        aria-labelledby="start-title"
+      >
+        <div class="page-heading">
+          <p class="eyebrow">VEN. PO SVÉM.</p>
+          <h1 id="start-title" data-page-title="" tabindex="-1">
+            Připrav si svůj běh.
+          </h1>
+        </div>
+        <nav class="start-steps" aria-label="Příprava běhu">
+          <a href="#planner" data-route="" data-step-link="route"
+            ><span>1</span>Trasa</a
+          ><a href="#goal" data-route="" data-step-link="goal"
+            ><span>2</span>Cíl a tempo</a
+          ><a href="#run" data-route="" data-step-link="run"
+            ><span>3</span>Běh</a
+          >
+        </nav>
+        <section
+          id="planner"
+          class="planner"
+          aria-label="Plánování trasy"
+          data-start-step="route"
+        >
+          <aside class="route-side">
+            <div class="route-controls">
+              <div class="section-kicker">
+                <h2>Najdi svou cestu</h2>
+              </div>
+              <p class="route-intro">
+                Ťukni na start a další místa v mapě. Spojíme je po pěších
+                cestách.
+              </p>
+              <div class="route-metrics">
+                <div class="route-length">
+                  <span>Délka trasy</span
+                  ><strong
+                    ><span id="route-distance">0,00</span
+                    ><small> km</small></strong
+                  >
+                </div>
+                <div class="route-difference">
+                  <span>Od cíle</span
+                  ><strong
+                    ><span id="route-difference">−5,00</span
+                    ><small> km</small></strong
+                  >
+                </div>
+              </div>
+              <button
+                id="use-route-distance"
+                class="use-distance"
+                type="button"
+                data-route-edit=""
               >
-              · ©
-              <a
-                href="https://www.openstreetmap.org/copyright"
+                Použít délku trasy jako cíl <span aria-hidden="true">↗</span>
+              </button>
+              <div class="route-actions">
+                <button id="close-loop" type="button" data-route-edit="">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-loop"></use></svg
+                  >Zpět na start
+                </button>
+                <button id="add-center" type="button" data-route-edit="">
+                  <span aria-hidden="true">＋</span>Přidat střed
+                </button>
+                <button
+                  id="clear-route"
+                  class="text-button"
+                  type="button"
+                  data-route-edit=""
+                >
+                  Vymazat plán
+                </button>
+              </div>
+              <details class="saved-plans">
+                <summary>
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-save"></use></svg
+                  >Uložit nebo otevřít trasu<span
+                    class="disclosure"
+                    aria-hidden="true"
+                    >＋</span
+                  >
+                </summary>
+                <div class="saved-plans-body">
+                  <label class="stack-label" for="route-name"
+                    >Název trasy<input
+                      id="route-name"
+                      maxlength="100"
+                      placeholder="Třeba ranní okruh"
+                      data-route-edit=""
+                  /></label>
+                  <button
+                    id="save-route"
+                    class="button secondary"
+                    type="button"
+                    data-route-edit=""
+                  >
+                    Uložit trasu
+                  </button>
+                  <p id="planner-status" class="status" aria-live="polite"></p>
+                  <label class="stack-label" for="saved-routes"
+                    >Moje uložené trasy<select
+                      id="saved-routes"
+                      data-route-edit=""
+                    >
+                      <option value="">Vyber trasu</option>
+                    </select></label
+                  >
+                  <button
+                    id="delete-plan"
+                    class="text-button"
+                    type="button"
+                    data-route-edit=""
+                  >
+                    Smazat vybraný plán
+                  </button>
+                </div>
+              </details>
+              <a class="prepare-link" href="#goal" data-route=""
+                >Pokračovat na tempo
+                <svg class="icon" aria-hidden="true">
+                  <use href="#icon-arrow"></use></svg
+              ></a>
+            </div>
+          </aside>
+          <div id="map-stage" class="map-stage">
+            <div class="map-topline">
+              <span><i class="status-dot"></i>Pěší plánovač</span
+              ><button
+                id="expand-map"
+                type="button"
+                aria-expanded="false"
+                aria-controls="map-stage"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#icon-expand"></use></svg
+                ><span id="expand-map-label">Zvětšit mapu</span>
+              </button>
+            </div>
+            <div class="map-wrap">
+              <div id="map" aria-label="Mapa pro tvorbu běžecké trasy"></div>
+              <div class="map-hud">
+                <span id="map-hint"><i></i>Ťukni do mapy a vyber start</span
+                ><button id="undo-route" type="button" data-route-edit="">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-undo"></use></svg
+                  >Zpět
+                </button>
+              </div>
+              <div class="map-footer">
+                <span id="route-summary">Zatím bez trasy</span
+                ><button id="locate-me" type="button">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-location"></use></svg
+                  >Moje poloha
+                </button>
+              </div>
+            </div>
+            <div class="map-feedback">
+              <svg class="icon" aria-hidden="true">
+                <use href="#icon-route"></use>
+              </svg>
+              <div>
+                <p id="routing-status" role="status" aria-live="polite"></p>
+                <p id="map-status" role="status"></p>
+                <p id="location-status" role="status"></p>
+              </div>
+              <button
+                id="retry-route"
+                type="button"
+                data-route-edit=""
+                hidden=""
+              >
+                Zkusit znovu
+              </button>
+            </div>
+            <div class="map-attribution">
+              <span
+                >Trasy:
+                <a
+                  href="https://routing.openstreetmap.de/about.html"
+                  target="_blank"
+                  rel="noopener"
+                  >OSRM / FOSSGIS</a
+                >
+                · ©
+                <a
+                  href="https://www.openstreetmap.org/copyright"
+                  target="_blank"
+                  rel="noopener"
+                  >OpenStreetMap</a
+                ></span
+              ><a
+                href="https://www.openstreetmap.org/fixthemap"
                 target="_blank"
                 rel="noopener"
-                >OpenStreetMap</a
-              ></span
-            ><a
-              href="https://www.openstreetmap.org/fixthemap"
-              target="_blank"
-              rel="noopener"
-              >Opravit mapu ↗</a
-            >
+                >Opravit mapu ↗</a
+              >
+            </div>
           </div>
-        </div>
-      </section>
-      <section id="run-panel" class="run-panel" aria-labelledby="run-title">
-        <div class="run-state">
-          <p class="eyebrow">
-            <span class="status-dot"></span> TEĎ UŽ JEN TY A CESTA
-          </p>
-          <h2 id="run-title">Připraven vyběhnout?</h2>
-          <p id="run-message">
-            S trasou i bez ní. Čas spustíme, až najdeme spolehlivou GPS polohu.
-          </p>
-          <div class="run-actions">
-            <button id="start-run" class="button primary" type="button">
-              Spustit běh<svg class="icon" aria-hidden="true">
-                <use href="#icon-arrow" />
-              </svg>
-            </button>
-            <button
-              id="pause-run"
-              class="button secondary"
-              type="button"
-              hidden
-            >
-              Pozastavit
-            </button>
-            <button id="resume-run" class="button primary" type="button" hidden>
-              Pokračovat
-            </button>
-            <button id="stop-run" class="button stop" type="button" hidden>
-              Ukončit a uložit
-            </button>
-            <button
-              id="retry-save"
-              class="button secondary"
-              type="button"
-              hidden
-            >
-              Zkusit uložit znovu
-            </button>
+        </section>
+        <section
+          class="goal-step"
+          data-start-step="goal"
+          hidden=""
+          aria-label="Cíl a tempo"
+        >
+          <div class="goal-step-main">
+            <form id="goal-form" class="goal-card" novalidate="">
+              <div class="section-kicker">
+                <span class="step-number">1</span>
+                <h2>Dej běhu cíl</h2>
+              </div>
+              <fieldset id="goal-fields">
+                <legend class="sr-only">Cíl běhu</legend>
+                <div class="goal-grid">
+                  <label for="goal-distance"
+                    >Vzdálenost
+                    <span class="input-wrap"
+                      ><input
+                        id="goal-distance"
+                        type="number"
+                        min="0.1"
+                        max="100"
+                        step="0.1"
+                        value="5"
+                        required=""
+                        inputmode="decimal"
+                      /><span>km</span></span
+                    ></label
+                  >
+                  <label for="goal-time"
+                    >Čas
+                    <span class="input-wrap"
+                      ><input
+                        id="goal-time"
+                        type="number"
+                        min="1"
+                        max="1440"
+                        step="0.5"
+                        value="30"
+                        required=""
+                        inputmode="decimal"
+                      /><span>min</span></span
+                    ></label
+                  >
+                </div>
+              </fieldset>
+              <div class="target-pace">
+                <span>Cílové tempo</span
+                ><strong
+                  ><span id="target-pace">6:00</span
+                  ><small> / km</small></strong
+                >
+              </div>
+              <p id="goal-error" role="status"></p>
+            </form>
+            <div class="step-actions">
+              <a href="#start" data-route="">Zpět na trasu</a
+              ><a href="#run" data-route="" class="button primary"
+                >Připravit se
+                <svg class="icon" aria-hidden="true">
+                  <use href="#icon-arrow"></use></svg
+              ></a>
+            </div>
           </div>
-          <p id="gps-status" class="gps-status" role="status">
-            GPS je vypnutá.
-          </p>
-          <p id="wake-status" class="status"></p>
-          <div class="voice-settings">
-            <label class="switch-label"
-              ><input id="voice-enabled" type="checkbox" checked /><span
-                class="switch-track"
-                aria-hidden="true"
-              ></span
-              >Hlasové pokyny</label
-            ><button id="test-voice" type="button" aria-label="Vyzkoušet hlas">
+          <aside class="goal-explanation">
+            <span class="eyebrow">NASTAV SI VLASTNÍ RYTMUS</span>
+            <h2>Tempo, které sedí tobě.</h2>
+            <p>
+              Zadej vzdálenost a čas. Z nich spočítáme tempo a během běhu ti ho
+              připomeneme do sluchátek.
+            </p>
+            <p id="goal-route-copy" role="status"></p>
+            <button type="button" id="goal-use-route">Použít délku trasy</button
+            ><a href="#menu" data-route=""
+              >Upravit hlasové pokyny
               <svg class="icon" aria-hidden="true">
-                <use href="#icon-audio" /></svg
-              >Vyzkoušet
-            </button>
-          </div>
-          <p id="voice-support" class="status"></p>
-          <p class="run-limit">
-            Nech aplikaci otevřenou. Zamknutí telefonu může přerušit GPS i hlas.
-          </p>
-        </div>
-        <div class="live-metrics">
-          <div class="metric major">
-            <span>Aktuální tempo <small>posledních 45 s</small></span
-            ><strong><span id="live-pace">—</span><small> / km</small></strong
-            ><span class="pace-track" aria-hidden="true"></span>
-          </div>
-          <div class="metric">
-            <span>Vzdálenost</span
-            ><strong
-              ><span id="live-distance">0,00</span><small> km</small></strong
+                <use href="#icon-audio"></use></svg
+            ></a>
+          </aside>
+        </section>
+        <section
+          id="run-panel"
+          class="run-panel"
+          aria-labelledby="run-title"
+          data-start-step="run"
+          hidden=""
+        >
+          <div class="run-state">
+            <p class="eyebrow">
+              <span class="status-dot"></span> TEĎ UŽ JEN TY A CESTA
+            </p>
+            <h2 id="run-title">Připraven vyběhnout?</h2>
+            <p id="run-message">
+              S trasou i bez ní. Čas spustíme, až najdeme spolehlivou GPS
+              polohu.
+            </p>
+            <p
+              id="run-preparation-summary"
+              class="run-preparation-summary"
+              role="status"
+            ></p>
+            <div class="run-actions">
+              <button id="start-run" class="button primary" type="button">
+                Spustit běh<svg class="icon" aria-hidden="true">
+                  <use href="#icon-arrow"></use>
+                </svg>
+              </button>
+              <button
+                id="pause-run"
+                class="button secondary"
+                type="button"
+                hidden=""
+              >
+                Pozastavit
+              </button>
+              <button
+                id="resume-run"
+                class="button primary"
+                type="button"
+                hidden=""
+              >
+                Pokračovat
+              </button>
+              <button id="stop-run" class="button stop" type="button" hidden="">
+                Ukončit a uložit
+              </button>
+              <button
+                id="retry-save"
+                class="button secondary"
+                type="button"
+                hidden=""
+              >
+                Zkusit uložit znovu
+              </button>
+            </div>
+            <p id="gps-status" class="gps-status" role="status">
+              GPS je vypnutá.
+            </p>
+            <p id="wake-status" class="status"></p>
+
+            <p class="run-limit">
+              Nech aplikaci otevřenou. Zamknutí telefonu může přerušit GPS i
+              hlas.
+            </p>
+            <a class="run-settings-link" href="#menu" data-route=""
+              >Hlas a nastavení →</a
             >
           </div>
-          <div class="metric">
-            <span>Čas bez pauz</span><strong id="live-time">0:00</strong>
+          <div class="live-metrics">
+            <div class="metric major">
+              <span>Aktuální tempo <small>posledních 45 s</small></span
+              ><strong><span id="live-pace">—</span><small> / km</small></strong
+              ><span class="pace-track" aria-hidden="true"></span>
+            </div>
+            <div class="metric">
+              <span>Vzdálenost</span
+              ><strong
+                ><span id="live-distance">0,00</span><small> km</small></strong
+              >
+            </div>
+            <div class="metric">
+              <span>Čas bez pauz</span><strong id="live-time">0:00</strong>
+            </div>
+            <div class="metric minor">
+              <span>Průměrné tempo</span><strong id="average-pace">—</strong>
+            </div>
+            <div class="metric minor">
+              <span>Odchylka od cíle</span><strong id="live-delta">—</strong>
+            </div>
+            <div class="metric remaining">
+              <span>Zbývá do cíle</span
+              ><strong id="remaining-distance">5,00 km</strong>
+              <p id="remaining-time"></p>
+            </div>
+            <div class="voice-card" role="status">
+              <svg class="icon" aria-hidden="true">
+                <use href="#icon-audio"></use>
+              </svg>
+              <p id="voice-copy">Hlasový průvodce čeká na první běh.</p>
+            </div>
           </div>
-          <div class="metric minor">
-            <span>Průměrné tempo</span><strong id="average-pace">—</strong>
-          </div>
-          <div class="metric minor">
-            <span>Odchylka od cíle</span><strong id="live-delta">—</strong>
-          </div>
-          <div class="metric remaining">
-            <span>Zbývá do cíle</span
-            ><strong id="remaining-distance">5,00 km</strong>
-            <p id="remaining-time"></p>
-          </div>
-          <div class="voice-card" role="status">
-            <svg class="icon" aria-hidden="true">
-              <use href="#icon-audio" />
-            </svg>
-            <p id="voice-copy">Hlasový průvodce čeká na první běh.</p>
-          </div>
-        </div>
+        </section>
       </section>
-      <section id="history" class="history" aria-labelledby="history-title">
+
+      <section
+        id="history"
+        class="history app-page"
+        aria-labelledby="history-title"
+        data-page="history"
+        hidden=""
+      >
         <div class="history-title">
           <div>
             <p class="eyebrow">TVOJE ODBĚHNUTÉ KILOMETRY</p>
-            <h2 id="history-title">Každý běh se počítá.</h2>
+            <h2 id="history-title" data-page-title="" tabindex="-1">
+              Tvoje běhy.
+            </h2>
             <p id="history-total"></p>
+            <span class="sr-only" id="history-count">0</span>
           </div>
-          <button id="export-all" type="button">
-            Stáhnout zálohu <span aria-hidden="true">↗</span>
-          </button>
         </div>
         <div id="history-list" class="history-list"></div>
-        <p class="privacy-note">
-          Záloha obsahuje přesné polohy. Sdílej ji jen s lidmi, kterým je chceš
-          ukázat.
-        </p>
       </section>
       <section
-        id="account"
-        class="account-panel"
-        aria-labelledby="account-title"
+        class="app-page profile-page"
+        data-page="profile"
+        hidden=""
+        aria-labelledby="profile-title"
       >
-        <div>
-          <p class="eyebrow">TVŮJ PROSTOR</p>
-          <h2 id="account-title">Tvoje běhy. Tvoje data.</h2>
-          <p id="account-status">
-            Běhy se ukládají v tomto prohlížeči. Pravidelně si stáhni zálohu.
-          </p>
-          <details class="privacy-details">
-            <summary>Jak funguje soukromí a mapa</summary>
-            <p>
-              Mapové podklady poskytuje OpenStreetMap. Služba při načítání vidí
-              výřez mapy a síťové údaje, nikoli uložený GPS záznam. Při
-              plánování posíláme zvolené body službě FOSSGIS, která vypočítá
-              pěší trasu a požadavek ukládá do serverového logu.
-              <a
-                href="https://routing.openstreetmap.de/about.html"
-                target="_blank"
-                rel="noopener"
-                >Podrobnosti o službě a soukromí</a
-              >.
-            </p>
-            <p>
-              Mapa a výpočet nové trasy potřebují internet. Uloženou trasu i
-              záznam běhu lze po načtení aplikace používat bez něj. Mapa nemusí
-              zachytit aktuální uzavírky a změny průchodnosti cest.
-            </p>
-          </details>
+        <div class="page-heading">
+          <p class="eyebrow">TOHLE JSI TY</p>
+          <h1 id="profile-title" data-page-title="" tabindex="-1">
+            Můj profil.
+          </h1>
+          <p>Tvůj prostor pro vlastní cíle.</p>
         </div>
-        <div class="account-actions">
-          <form id="login-form" hidden>
-            <label class="stack-label" for="login-email"
-              >E-mail z pozvánky<input
-                id="login-email"
-                type="email"
-                autocomplete="email"
-                required /></label
-            ><button class="button secondary" type="submit">
-              Poslat přihlašovací odkaz
-            </button>
-            <p>Testování je pouze pro pozvané účty.</p>
-          </form>
-          <div id="cloud-actions" hidden>
-            <button id="sync-cloud" class="button secondary" type="button">
-              Synchronizovat moje běhy</button
-            ><button id="import-device" type="button">
-              Převzít běhy z tohoto zařízení</button
-            ><button id="logout" type="button">Odhlásit se</button>
-            <p>Synchronizace nahraje tvé GPS záznamy do soukromého účtu.</p>
+        <div class="profile-layout">
+          <div class="profile-card">
+            <span id="profile-avatar" class="profile-avatar" aria-hidden="true"
+              >R</span
+            >
+            <h2 id="profile-display-name">Tvůj běžecký profil</h2>
+            <p>Osobní profil v tomto zařízení</p>
+            <div class="profile-totals">
+              <div>
+                <strong id="profile-total">0,00 km</strong
+                ><span>Celkem uběhnuto</span>
+              </div>
+              <div>
+                <strong id="profile-run-count">0</strong
+                ><span>Dokončených běhů</span>
+              </div>
+              <div>
+                <strong id="profile-longest">—</strong><span>Nejdelší běh</span>
+              </div>
+            </div>
           </div>
-          <p id="cloud-status" role="status"></p>
+          <form id="profile-form" class="settings-card" novalidate="">
+            <h2>Podle tebe.</h2>
+            <label class="stack-label" for="profile-name"
+              >Jak ti máme říkat?<input
+                id="profile-name"
+                autocomplete="nickname"
+                maxlength="40"
+                placeholder="Tvoje jméno" /></label
+            ><label class="stack-label" for="profile-weekly"
+              >Týdenní cíl v kilometrech<input
+                id="profile-weekly"
+                type="number"
+                inputmode="decimal"
+                min="1"
+                max="500"
+                step="0.5"
+                value="15"
+                required=""
+            /></label>
+            <p>
+              Jméno a cíl se ukládají v tomto zařízení. Týden počítáme od
+              pondělí.
+            </p>
+            <button class="button primary" type="submit">Uložit profil</button>
+            <p id="profile-status" role="status"></p>
+          </form>
         </div>
       </section>
-      <footer class="app-footer">
-        <span>RunGuide</span>
-        <p>Dobrá cesta začíná prvním krokem.</p>
-        <a href="#planner">Zpátky na mapu ↑</a>
-      </footer>
+      <section
+        class="app-page menu-page"
+        data-page="menu"
+        hidden=""
+        aria-labelledby="menu-title"
+      >
+        <div class="page-heading">
+          <p class="eyebrow">VŠECHNO OSTATNÍ</p>
+          <h1 id="menu-title" data-page-title="" tabindex="-1">Po tvém.</h1>
+          <p>Nastavení, soukromí a tvůj účet na jednom místě.</p>
+        </div>
+        <div class="settings-grid">
+          <div>
+            <a href="#profile" data-route="" class="menu-profile-link"
+              ><svg class="icon" aria-hidden="true">
+                <use href="#icon-user"></use></svg
+              ><span
+                ><strong>Upravit profil</strong
+                ><small>Jméno a týdenní cíl</small></span
+              ><svg class="icon" aria-hidden="true">
+                <use href="#icon-arrow"></use></svg
+            ></a>
+            <section class="settings-card appearance-card">
+              <div>
+                <h2>Vzhled aplikace</h2>
+                <p>Světlo, nebo tma. Volbu si zapamatujeme.</p>
+              </div>
+              <button
+                id="theme-toggle"
+                class="theme-toggle"
+                type="button"
+                aria-label="Tmavý režim"
+                aria-pressed="false"
+                title="Přepnout vzhled"
+              >
+                <svg
+                  class="icon theme-moon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"
+                  ></path>
+                </svg>
+                <svg
+                  class="icon theme-sun"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path
+                    d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+                  ></path>
+                </svg>
+              </button>
+            </section>
+            <section class="settings-card voice-card-settings">
+              <h2>Hlasový průvodce</h2>
+              <div class="voice-settings">
+                <label class="switch-label"
+                  ><input id="voice-enabled" type="checkbox" checked="" /><span
+                    class="switch-track"
+                    aria-hidden="true"
+                  ></span
+                  >Hlasové pokyny</label
+                ><button
+                  id="test-voice"
+                  type="button"
+                  aria-label="Vyzkoušet hlas"
+                >
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-audio"></use></svg
+                  >Vyzkoušet
+                </button>
+              </div>
+              <p id="voice-support" class="status"></p>
+            </section>
+          </div>
+          <div class="settings-card data-settings">
+            <h2>Data a soukromí</h2>
+            <p>Stáhni si zálohu svých běhů a uložených tras.</p>
+            <button id="export-all" type="button">
+              Stáhnout zálohu <span aria-hidden="true">↗</span>
+            </button>
+            <p class="privacy-note">
+              Záloha obsahuje přesné polohy. Sdílej ji jen s lidmi, kterým je
+              chceš ukázat.
+            </p>
+            <section
+              id="account"
+              class="account-panel"
+              aria-labelledby="account-title"
+            >
+              <div>
+                <p class="eyebrow">TVŮJ PROSTOR</p>
+                <h2 id="account-title">Účet a ukládání</h2>
+                <p id="account-status">
+                  Běhy se ukládají v tomto prohlížeči. Pravidelně si stáhni
+                  zálohu.
+                </p>
+                <details class="privacy-details">
+                  <summary>Jak funguje soukromí a mapa</summary>
+                  <p>
+                    Mapové podklady poskytuje OpenStreetMap. Služba při načítání
+                    vidí výřez mapy a síťové údaje, nikoli uložený GPS záznam.
+                    Při plánování posíláme zvolené body službě FOSSGIS, která
+                    vypočítá pěší trasu a požadavek ukládá do serverového logu.
+                    <a
+                      href="https://routing.openstreetmap.de/about.html"
+                      target="_blank"
+                      rel="noopener"
+                      >Podrobnosti o službě a soukromí</a
+                    >.
+                  </p>
+                  <p>
+                    Mapa a výpočet nové trasy potřebují internet. Uloženou trasu
+                    i záznam běhu lze po načtení aplikace používat bez něj. Mapa
+                    nemusí zachytit aktuální uzavírky a změny průchodnosti cest.
+                  </p>
+                </details>
+              </div>
+              <div class="account-actions">
+                <form id="login-form" hidden="">
+                  <label class="stack-label" for="login-email"
+                    >E-mail z pozvánky<input
+                      id="login-email"
+                      type="email"
+                      autocomplete="email"
+                      required="" /></label
+                  ><button class="button secondary" type="submit">
+                    Poslat přihlašovací odkaz
+                  </button>
+                  <p>Testování je pouze pro pozvané účty.</p>
+                </form>
+                <div id="cloud-actions" hidden="">
+                  <button
+                    id="sync-cloud"
+                    class="button secondary"
+                    type="button"
+                  >
+                    Synchronizovat moje běhy</button
+                  ><button id="import-device" type="button">
+                    Převzít běhy z tohoto zařízení</button
+                  ><button id="logout" type="button">Odhlásit se</button>
+                  <p>
+                    Synchronizace nahraje tvé GPS záznamy do soukromého účtu.
+                  </p>
+                </div>
+                <p id="cloud-status" role="status"></p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
     </main>
-    <nav class="mobile-nav" aria-label="Rychlá navigace">
-      <a href="#planner"
-        ><svg class="icon" aria-hidden="true"><use href="#icon-route" /></svg
-        >Trasa</a
-      ><a href="#run-panel"
-        ><svg class="icon" aria-hidden="true"><use href="#icon-run" /></svg
-        >Běh</a
-      ><a href="#history"
-        ><svg class="icon" aria-hidden="true"><use href="#icon-history" /></svg
-        >Historie</a
-      ><a href="#account"
-        ><svg class="icon" aria-hidden="true"><use href="#icon-user" /></svg>Můj
-        prostor</a
+    <nav class="app-nav" aria-label="Hlavní navigace">
+      <a href="#overview" data-route="" data-nav="overview"
+        ><svg class="icon" aria-hidden="true">
+          <use href="#icon-overview"></use></svg
+        ><span>Přehled</span></a
+      ><a href="#history" data-route="" data-nav="history"
+        ><svg class="icon" aria-hidden="true">
+          <use href="#icon-history"></use></svg
+        ><span>Historie</span></a
+      ><a href="#start" data-route="" data-nav="start" class="nav-start"
+        ><span class="start-orb"
+          ><svg class="icon" aria-hidden="true">
+            <use href="#icon-run"></use></svg></span
+        ><span>Start</span></a
+      ><a href="#profile" data-route="" data-nav="profile"
+        ><svg class="icon" aria-hidden="true"><use href="#icon-user"></use></svg
+        ><span>Profil</span></a
+      ><a href="#menu" data-route="" data-nav="menu"
+        ><svg class="icon" aria-hidden="true"><use href="#icon-menu"></use></svg
+        ><span>Menu</span></a
       >
     </nav>
     <dialog
@@ -567,7 +882,7 @@
       <h2 id="confirm-title">Potvrdit akci</h2>
       <p id="confirm-text"></p>
       <form method="dialog">
-        <button value="cancel" autofocus>Zrušit</button
+        <button value="cancel" autofocus="">Zrušit</button
         ><button value="confirm">Potvrdit</button>
       </form>
     </dialog>
