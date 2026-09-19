@@ -60,9 +60,11 @@ export function setupDashboard(
     );
     text(
       "summary-empty",
-      summary.count
-        ? "Každý další běh se tu přičte."
-        : "Zatím bez běhu v tomto období. První kilometry čekají na tebe.",
+      summary.incompleteCount
+        ? `Období obsahuje neúplný GPS záznam (${summary.incompleteCount}). Vzdálenost je jen zachycená část, průměrné tempo nelze určit.`
+        : summary.count
+          ? "Každý další běh se tu přičte."
+          : "Zatím bez běhu v tomto období. První kilometry čekají na tebe.",
     );
     const percent = Math.round((week.meters / (profile.weeklyKm * 1000)) * 100);
     text(

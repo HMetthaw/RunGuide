@@ -954,6 +954,11 @@ body.map-expanded {
   color: #c6d2df;
   font-size: 10px;
 }
+#recording-status,
+.history-summary .app-notice {
+  color: var(--ink);
+  font: 700 14px/1.6 var(--sans);
+}
 .voice-settings {
   display: flex;
   flex-wrap: wrap;

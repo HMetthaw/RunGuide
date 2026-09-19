@@ -79,6 +79,94 @@ describe("GPS run lifecycle", () => {
     expect(runner.trace.at(-1)!.segment).toBe(1);
     expect(runner.currentPace(epoch + 100000)).toBeNull();
   });
+  it("marks an outage even if GPS never returns before finishing", () => {
+    const runner = running();
+    for (let i = 0; i <= 30; i++) feed(runner, i);
+    const run = runner.finish(epoch + 90000)!;
+    expect(run.distanceMeters).toBeCloseTo(90, 0);
+    expect(run.durationSeconds).toBe(90);
+    expect(run.quality.gaps).toBe(1);
+  });
+  it("marks recovery from a running checkpoint as incomplete", () => {
+    const runner = running();
+    for (let i = 0; i <= 30; i++) feed(runner, i);
+    const restored = new Runner();
+    restored.restore(runner.checkpoint(epoch + 30000));
+    expect(restored.gaps).toBe(1);
+    expect(restored.elapsed(epoch + 86400000)).toBe(30);
+  });
+  it("records one interruption without a new fix, preserves the gap through checkpointing, and waits for fresh GPS", () => {
+    const runner = running();
+    for (let i = 0; i <= 30; i++) feed(runner, i);
+    expect(runner.interrupt(epoch + 30000, "hidden")).toBe(true);
+    expect(runner.interrupt(epoch + 31000, "pagehide")).toBe(false);
+    runner.checkSignal(epoch + 70000);
+    expect(runner.gaps).toBe(1);
+    expect(runner.currentPace(epoch + 31000)).toBeNull();
+    expect(runner.averagePace(epoch + 31000)).toBeNull();
+    runner.reacquire(epoch + 70000);
+    expect(runner.ingest(fix(69, 500), epoch + 70000)).toBe("stale");
+    expect(feed(runner, 70, 500)).toBe("accepted");
+    expect(runner.meters).toBeCloseTo(90, 0);
+    expect(runner.untrackedSeconds(epoch + 70000)).toBe(40);
+    for (let i = 71; i <= 95; i++) feed(runner, i, 500 + (i - 70) * 3);
+    expect(runner.currentPace(epoch + 95000)).toBeCloseTo(333.33, 0);
+    expect(runner.averagePace(epoch + 95000)).toBeNull();
+    expect(runner.trace.at(-1)?.segment).toBe(1);
+  });
+  it("keeps manual pause recovery complete and excludes time spent paused", () => {
+    const runner = running();
+    for (let i = 0; i <= 30; i++) feed(runner, i);
+    runner.pause(epoch + 30000);
+    const restored = new Runner();
+    restored.restore(runner.checkpoint(epoch + 60000));
+    expect(restored.incomplete).toBe(false);
+    restored.resume(epoch + 100000);
+    expect(restored.ingest(fix(99, 500), epoch + 100000)).toBe("stale");
+    feed(restored, 100, 500);
+    feed(restored, 110, 530);
+    expect(restored.elapsed(epoch + 110000)).toBe(40);
+    expect(restored.meters).toBeCloseTo(120, 0);
+    expect(restored.averagePace(epoch + 110000)).toBeCloseTo(333.33, 0);
+  });
+  it("restores a pending outage only once and marks legacy checkpoint recovery uncertain", () => {
+    const runner = running();
+    for (let i = 0; i <= 30; i++) feed(runner, i);
+    const checkpoint = runner.checkpoint(epoch + 60000)!;
+    expect(checkpoint.gaps).toBe(1);
+    const restored = new Runner();
+    restored.restore(checkpoint);
+    expect(restored.gaps).toBe(1);
+    expect(restored.untrackedSeconds(epoch + 90000)).toBe(30);
+    expect(restored.recoveryUncertain).toBe(true);
+    const restoredAgain = new Runner();
+    restoredAgain.restore(restored.checkpoint(epoch + 90000));
+    expect(restoredAgain.gaps).toBe(1);
+    expect(restoredAgain.untrackedSeconds(epoch + 90000)).toBe(30);
+    const legacy = {
+      ...checkpoint,
+      phase: undefined,
+      interruption: undefined,
+      savedAt: undefined,
+      untrackedMs: undefined,
+      recoveryUncertain: undefined,
+      gaps: 0,
+    };
+    restoredAgain.restore(legacy);
+    expect(restoredAgain.recoveryUncertain).toBe(true);
+    expect(restoredAgain.gaps).toBe(1);
+  });
+  it("can preserve setup before the first position without inventing an active clock", () => {
+    const runner = running();
+    const restored = new Runner();
+    restored.restore(runner.checkpoint(epoch));
+    expect(restored.phase).toBe("paused");
+    expect(restored.elapsed(epoch + 100000)).toBe(0);
+    expect(restored.incomplete).toBe(false);
+    restored.resume(epoch + 100000);
+    feed(restored, 100);
+    expect(restored.elapsed(epoch + 110000)).toBe(10);
+  });
   it("excludes pauses and reconnecting GPS from elapsed time and distance", () => {
     const runner = running();
     for (let i = 0; i <= 30; i++) feed(runner, i);

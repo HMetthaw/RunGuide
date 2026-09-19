@@ -16,6 +16,15 @@ function run(date: Date, distanceMeters: number, durationSeconds: number): Run {
     feedback: "",
   };
 }
+it("does not present a whole-period pace from incomplete GPS distance", () => {
+  const now = new Date(2026, 8, 18, 12);
+  const incomplete = run(now, 4840, 2000);
+  incomplete.quality.gaps = 1;
+  const summary = runSummary([incomplete, run(now, 2000, 600)], "week", now);
+  expect(summary.meters).toBe(6840);
+  expect(summary.seconds).toBe(2600);
+  expect(summary.pace).toBeNull();
+});
 it("counts local Monday through now, excludes previous week and future runs, and weights pace by distance", () => {
   const now = new Date(2026, 8, 18, 12);
   const runs = [

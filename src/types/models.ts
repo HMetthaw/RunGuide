@@ -45,6 +45,8 @@ export const runSchema = z
     quality: z.object({
       rejectedFixes: z.number().int().nonnegative(),
       gaps: z.number().int().nonnegative(),
+      untrackedSeconds: z.number().finite().nonnegative().optional(),
+      recoveryUncertain: z.boolean().optional(),
     }),
     feedback: z.string().max(1000).default(""),
   })

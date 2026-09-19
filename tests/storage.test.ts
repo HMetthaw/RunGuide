@@ -119,6 +119,27 @@ describe("private local persistence", () => {
     expect(xml).toContain('lat="49"');
     expect(xml).not.toContain("<script");
   });
+  it("persists interruption quality privately and exports disjoint GPX segments", () => {
+    const storage = new MemoryStorage();
+    const run = recordedRun();
+    const last = run.trace.at(-1)!;
+    run.trace.push({
+      ...last,
+      timestamp: last.timestamp + 60000,
+      segment: last.segment + 1,
+    });
+    run.quality = {
+      gaps: 1,
+      rejectedFixes: 3,
+      untrackedSeconds: 60,
+      recoveryUncertain: true,
+    };
+    new LocalRepository(storage, "alice").saveRun(run);
+    const saved = new LocalRepository(storage, "alice").runs()[0];
+    expect(saved.quality).toEqual(run.quality);
+    expect(new LocalRepository(storage, "bob").runs()).toHaveLength(0);
+    expect(gpx(saved).match(/<trkseg>/g)).toHaveLength(2);
+  });
   it("keeps an interrupted run when editing a different historical run", () => {
     const storage = new MemoryStorage(),
       repo = new LocalRepository(storage),

@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runSchema, type Run } from "../types/models";
+import { averageRunPace } from "../domain/recording-quality";
 
 export class CloudRepository {
   readonly client: SupabaseClient | null;
@@ -87,6 +88,7 @@ export class CloudRepository {
     if (runs.length) {
       const rows = runs.map((raw) => {
         const run = runSchema.parse(raw);
+        const pace = averageRunPace(run);
         return {
           id: run.id,
           owner_id: owner,
@@ -96,12 +98,7 @@ export class CloudRepository {
           distance_meters: Math.round(run.distanceMeters),
           duration_seconds: Math.round(run.durationSeconds),
           average_pace_seconds_per_km:
-            run.distanceMeters > 0
-              ? Math.max(
-                  1,
-                  Math.round((run.durationSeconds * 1000) / run.distanceMeters),
-                )
-              : null,
+            pace !== null ? Math.max(1, Math.round(pace)) : null,
           simplified_path: run.trace.map((p) => [p.lng, p.lat]),
           client_record: run,
         };

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { planSchema, runSchema, type Plan, type Run } from "../types/models";
-import { draftSchema, type Draft } from "../domain/runner";
+import { draftSchema, type Draft } from "../types/recording";
 
 const documentSchema = z.object({
   version: z.literal(2),

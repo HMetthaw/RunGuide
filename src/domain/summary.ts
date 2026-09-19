@@ -1,4 +1,5 @@
 import type { Run } from "../types/models";
+import { isIncomplete } from "./recording-quality";
 
 export type SummaryPeriod = "week" | "month";
 export function runSummary(
@@ -21,6 +22,7 @@ export function runSummary(
   });
   const meters = selected.reduce((sum, run) => sum + run.distanceMeters, 0);
   const seconds = selected.reduce((sum, run) => sum + run.durationSeconds, 0);
+  const incompleteCount = selected.filter(isIncomplete).length;
   const days = Math.round(
     (Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()) -
       Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) /
@@ -48,7 +50,9 @@ export function runSummary(
     meters,
     seconds,
     count: selected.length,
-    pace: meters > 0 ? (seconds * 1000) / meters : null,
+    pace:
+      meters > 0 && incompleteCount === 0 ? (seconds * 1000) / meters : null,
+    incompleteCount,
     buckets,
   };
 }

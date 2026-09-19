@@ -1,5 +1,6 @@
 import type { Run } from "../types/models";
 import { formatDistance, formatPace, formatTime } from "../domain/pace";
+import { averageRunPace, isIncomplete } from "../domain/recording-quality";
 export function historyCard(
   run: Run,
   onExport: () => void,
@@ -18,10 +19,21 @@ export function historyCard(
   const length = document.createElement("strong");
   length.textContent = `${formatDistance(run.distanceMeters)} km`;
   const metrics = document.createElement("p");
-  metrics.textContent = `${formatTime(run.durationSeconds)} · ${formatPace(run.distanceMeters ? (run.durationSeconds * 1000) / run.distanceMeters : null)} / km`;
+  metrics.textContent = `${formatTime(run.durationSeconds)} · ${formatPace(averageRunPace(run))} / km`;
   const target = document.createElement("p");
   target.textContent = `Cíl: ${run.goal.distanceKm} km za ${run.goal.durationMinutes} min`;
   summary.append(date, length, metrics, target);
+  if (isIncomplete(run)) {
+    const warning = document.createElement("p");
+    warning.className = "app-notice";
+    warning.textContent =
+      "Neúplný GPS záznam. Vzdálenost je jen zachycená část; průměrné tempo nelze určit.";
+    if (run.quality.recoveryUncertain)
+      warning.textContent +=
+        " Čas mimo aplikaci po posledním uložení není známý ani započítaný.";
+    else warning.textContent += " Čas zahrnuje výpadek GPS.";
+    summary.append(warning);
+  }
   article.append(summary);
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 280 130");
@@ -68,6 +80,8 @@ export function historyCard(
   label.textContent = "Poznámka a data běhu";
   const quality = document.createElement("p");
   quality.textContent = `Vynechané GPS vzorky: ${run.quality.rejectedFixes}. Přerušení signálu: ${run.quality.gaps}.`;
+  if (run.quality.untrackedSeconds !== undefined)
+    quality.textContent += ` Doba bez souvislého záznamu GPS: ${formatTime(run.quality.untrackedSeconds)}${run.quality.recoveryUncertain ? " + neznámá doba mimo aplikaci" : ""}.`;
   const feedback = document.createElement("textarea");
   feedback.maxLength = 1000;
   feedback.value = run.feedback;

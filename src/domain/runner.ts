@@ -1,10 +1,6 @@
-import { z } from "zod";
 import {
   fixSchema,
   goalSchema,
-  pointSchema,
-  routingSchema,
-  tracePointSchema,
   type Fix,
   type Goal,
   type Point,
@@ -14,21 +10,14 @@ import {
   type TracePoint,
 } from "../types/models";
 import { distance, simplifyTrace } from "./geo";
+import {
+  draftSchema,
+  type Draft,
+  type TrackingInterruption,
+} from "../types/recording";
+export { draftSchema, type Draft } from "../types/recording";
 
-export const draftSchema = z.object({
-  id: z.string().uuid(),
-  startedAt: z.number().finite().nonnegative(),
-  elapsedMs: z.number().finite().nonnegative(),
-  goal: goalSchema,
-  route: z.array(pointSchema).max(5000),
-  routing: routingSchema.optional(),
-  trace: z.array(tracePointSchema).max(30000),
-  meters: z.number().finite().nonnegative(),
-  rejectedFixes: z.number().int().nonnegative(),
-  gaps: z.number().int().nonnegative(),
-  navigationNext: z.number().int().nonnegative().default(0),
-});
-export type Draft = z.infer<typeof draftSchema>;
+export const GPS_GAP_MS = 15000;
 export class Runner {
   phase: RunPhase = "idle";
   goal: Goal = { distanceKm: 5, durationMinutes: 30 };
@@ -38,6 +27,10 @@ export class Runner {
   meters = 0;
   rejectedFixes = 0;
   gaps = 0;
+  recoveryUncertain = false;
+  interruption: TrackingInterruption | null = null;
+  private untrackedMs = 0;
+  private acceptAfter = 0;
   navigationNext = 0;
   lastFix: Fix | null = null;
   private anchor: Fix | null = null;
@@ -58,6 +51,10 @@ export class Runner {
     this.meters = 0;
     this.rejectedFixes = 0;
     this.gaps = 0;
+    this.recoveryUncertain = false;
+    this.interruption = null;
+    this.untrackedMs = 0;
+    this.acceptAfter = 0;
     this.navigationNext = 0;
     this.lastFix = null;
     this.anchor = null;
@@ -77,12 +74,53 @@ export class Runner {
       1000
     );
   }
+  get incomplete(): boolean {
+    return this.gaps > 0 || this.recoveryUncertain;
+  }
+  averagePace(now: number): number | null {
+    return !this.incomplete && this.meters > 10
+      ? (this.elapsed(now) * 1000) / this.meters
+      : null;
+  }
+  untrackedSeconds(now: number): number {
+    return (
+      (this.untrackedMs +
+        (this.interruption ? Math.max(0, now - this.interruption.since) : 0)) /
+      1000
+    );
+  }
+  interrupt(now: number, reason: TrackingInterruption["reason"]): boolean {
+    if (this.phase !== "running" || this.interruption) return false;
+    this.interruption = { since: this.lastFix?.timestamp ?? now, reason };
+    this.gaps++;
+    this.segment++;
+    this.anchor = null;
+    this.samples = [];
+    return true;
+  }
+  checkSignal(now: number): boolean {
+    return this.phase === "running" &&
+      this.lastFix !== null &&
+      now - this.lastFix.timestamp > GPS_GAP_MS
+      ? this.interrupt(now, "gps-timeout")
+      : false;
+  }
+  // A new watcher must not anchor the route to a cached position from before return.
+  reacquire(now: number) {
+    this.acceptAfter = now;
+  }
+  private closeInterruption(now: number) {
+    if (!this.interruption) return;
+    this.untrackedMs += Math.max(0, now - this.interruption.since);
+    this.interruption = null;
+  }
   ingest(
     input: Fix,
     now: number,
   ): "accepted" | "weak" | "stale" | "jump" | "jitter" | "ignored" {
     if (this.phase !== "acquiring" && this.phase !== "running")
       return "ignored";
+    this.checkSignal(now);
     const parsed = fixSchema.safeParse(input);
     if (!parsed.success || parsed.data.accuracy > 35) {
       this.rejectedFixes++;
@@ -91,7 +129,8 @@ export class Runner {
     const fix = parsed.data;
     if (
       fix.timestamp <= this.lastSeen ||
-      now - fix.timestamp > 15000 ||
+      fix.timestamp < this.acceptAfter ||
+      now - fix.timestamp > GPS_GAP_MS ||
       fix.timestamp > now + 2000
     ) {
       this.rejectedFixes++;
@@ -102,15 +141,8 @@ export class Runner {
       this.rejectedFixes++;
       return "jump";
     }
-    // Signal continuity depends on received usable fixes, not on the last
-    // position far enough away to add distance (the runner may be standing).
-    if (this.lastFix && fix.timestamp - this.lastFix.timestamp > 15000) {
-      this.anchor = null;
-      this.samples = [];
-      this.segment++;
-      this.gaps++;
-    }
     if (!this.anchor) {
+      this.closeInterruption(now);
       this.anchor = fix;
       this.lastFix = fix;
       this.trace.push({ ...fix, segment: this.segment });
@@ -167,6 +199,7 @@ export class Runner {
   currentPace(now: number): number | null {
     if (
       this.phase !== "running" ||
+      this.interruption !== null ||
       !this.lastFix ||
       now - this.lastFix.timestamp > 10000 ||
       this.samples.length < 2
@@ -183,6 +216,8 @@ export class Runner {
   }
   pause(now: number) {
     if (!["acquiring", "running"].includes(this.phase)) return;
+    this.checkSignal(now);
+    this.closeInterruption(now);
     this.elapsedMs = this.elapsed(now) * 1000;
     this.activeSince = null;
     this.phase = "paused";
@@ -191,11 +226,15 @@ export class Runner {
     this.samples = [];
     this.segment++;
   }
-  resume() {
-    if (this.phase === "paused") this.phase = "acquiring";
+  resume(now?: number) {
+    if (this.phase === "paused") {
+      this.phase = "acquiring";
+      if (now !== undefined) this.reacquire(now);
+    }
   }
   checkpoint(now: number): Draft | null {
-    if (!this.startedAt) return null;
+    if (!this.id || this.phase === "idle") return null;
+    this.checkSignal(now);
     return {
       id: this.id,
       startedAt: this.startedAt,
@@ -208,6 +247,11 @@ export class Runner {
       rejectedFixes: this.rejectedFixes,
       gaps: this.gaps,
       navigationNext: this.navigationNext,
+      phase: this.phase,
+      savedAt: now,
+      untrackedMs: this.untrackedMs,
+      recoveryUncertain: this.recoveryUncertain,
+      interruption: this.interruption,
     };
   }
   restore(value: unknown) {
@@ -222,10 +266,19 @@ export class Runner {
     this.meters = draft.meters;
     this.rejectedFixes = draft.rejectedFixes;
     this.gaps = draft.gaps;
+    this.untrackedMs = draft.untrackedMs ?? 0;
+    if (draft.interruption && draft.savedAt !== undefined)
+      this.untrackedMs += Math.max(0, draft.savedAt - draft.interruption.since);
+    const interrupted = draft.startedAt > 0 && draft.phase !== "paused";
+    this.recoveryUncertain = !!draft.recoveryUncertain || interrupted;
+    if (interrupted && !draft.interruption) this.gaps++;
+    this.interruption = null;
     this.navigationNext = draft.navigationNext;
     this.segment = Math.max(0, ...draft.trace.map((p) => p.segment)) + 1;
     this.activeSince = null;
     this.lastFix = null;
+    this.lastSeen = draft.trace.at(-1)?.timestamp ?? 0;
+    this.acceptAfter = draft.savedAt ?? this.lastSeen;
     this.anchor = null;
     this.samples = [];
     this.phase = "paused";
@@ -245,7 +298,12 @@ export class Runner {
       goal: this.goal,
       trace: simplifyTrace(this.trace),
       plannedRoute: this.route,
-      quality: { rejectedFixes: this.rejectedFixes, gaps: this.gaps },
+      quality: {
+        rejectedFixes: this.rejectedFixes,
+        gaps: this.gaps,
+        untrackedSeconds: this.untrackedMs / 1000,
+        recoveryUncertain: this.recoveryUncertain,
+      },
       feedback: "",
     };
   }

@@ -11,6 +11,7 @@ vi.mock("@supabase/supabase-js", () => ({
   }),
 }));
 import { CloudRepository } from "../src/services/cloud";
+import type { Run } from "../src/types/models";
 beforeEach(() => {
   vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
   vi.stubEnv("VITE_SUPABASE_ANON_KEY", "public-test-key");
@@ -49,4 +50,56 @@ it("keeps the original identity if a session expires while deleting", async () =
   });
   await expect(cloud.deleteRun(crypto.randomUUID())).rejects.toThrow();
   expect(mocks.from).not.toHaveBeenCalled();
+});
+it("uploads an incomplete run with null average pace and retains its quality metadata", async () => {
+  const cloud = new CloudRepository();
+  cloud.owner = "alice";
+  mocks.getUser.mockResolvedValue({
+    data: { user: { id: "alice" } },
+    error: null,
+  });
+  const run: Run = {
+    id: crypto.randomUUID(),
+    startedAt: "2026-09-19T10:00:00.000Z",
+    finishedAt: "2026-09-19T10:30:00.000Z",
+    durationSeconds: 1800,
+    distanceMeters: 4840,
+    goal: { distanceKm: 5.7, durationMinutes: 30 },
+    trace: [],
+    plannedRoute: [],
+    feedback: "",
+    quality: {
+      gaps: 1,
+      rejectedFixes: 0,
+      untrackedSeconds: 120,
+      recoveryUncertain: true,
+    },
+  };
+  const upsert = vi.fn().mockResolvedValue({ error: null });
+  const query = (records: { client_record: Run }[]) => ({
+    select: () => ({
+      eq: () => ({
+        order: () => ({ range: async () => ({ data: records, error: null }) }),
+      }),
+    }),
+  });
+  mocks.from.mockImplementation((table: string) =>
+    table === "run_deletions"
+      ? query([])
+      : { ...query([{ client_record: run }]), upsert },
+  );
+  const result = await cloud.sync([run]);
+  expect(upsert).toHaveBeenCalledWith(
+    [
+      expect.objectContaining({
+        average_pace_seconds_per_km: null,
+        distance_meters: 4840,
+        duration_seconds: 1800,
+        owner_id: "alice",
+        client_record: run,
+      }),
+    ],
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  expect(result.runs[0].quality).toEqual(run.quality);
 });

@@ -11,7 +11,8 @@
 - Pauza/obnovení: pauza a čekání na znovuzískání GPS se do aktivního času nepočítají. Běžné stání bez tlačítka pauzy se počítá.
 - Při výpadku použitelných GPS aktualizací přes 15 s vznikne oddělený segment. Samotné stání výpadek nezpůsobuje. Chybějící vzdálenost se nedopočítává přímkou.
 - Český hlas s testovacím tlačítkem, vypnutím, prioritou navigace a nejméně 60 s mezi radami k tempu.
-- Automatický průběžný záznam přibližně každých 5 s; po obnovení stránky se běh nabízí v pauze. Při pádu může chybět posledních několik sekund.
+- Každý přijatý GPS bod se ukládá ihned, čas přibližně každých 5 s a při skrytí; po obnovení stránky se běh nabízí v pauze. Obnova běžícího checkpointu označí záznam jako nejistý. Poslední zápis při pádu není zaručený.
+- Detekce výpadku i bez další GPS, obnova sledování po návratu a viditelný stav ochrany displeje. Neúplná vzdálenost se nevydává za celý běh: průměrné tempo je skryté i v historii a souhrnu. [Chování, nativní postup a telefonní test](GPS_LIFECYCLE.md).
 - Historie skutečných GPS stop: datum, čas, vzdálenost, tempo, původní cíl, malá mapa, poznámka, GPX export a smazání.
 - Export celé soukromé zálohy do JSON. Starší data prototypu zůstávají zachována, nemění se na vymyšlenou GPS historii.
 - Offline aplikace včetně vlastní kopie Leafletu a písem, instalovatelný manifest, PNG ikony, nabídka aktualizace až mimo aktivní běh.

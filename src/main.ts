@@ -1,5 +1,6 @@
 import type { Goal, GoalDistanceSource, Point, Run } from "./types/models";
 import { Runner } from "./domain/runner";
+import { GpsTracker } from "./services/gps-tracker";
 import { Navigator } from "./domain/navigation";
 import { distance } from "./domain/geo";
 import { routeGoalDistance } from "./domain/goal-distance";
@@ -116,15 +117,39 @@ const planner = new RoutePlanner(() => {
   renderRoute();
 });
 let navigation = new Navigator([]);
-let watch: number | null = null;
-let gpsGeneration = 0;
 let lastAdviceAt = 0,
   lastCheckpointAt = 0;
+let lastSignalAdviceAt = -Infinity;
+let lastRecoveryAdviceAt = -Infinity;
 let pendingRun: Run | null = null;
-let wakeLock: WakeLockSentinel | null = null;
 let syncBusy = false;
 let identityReady = false;
 const voice = new VoiceGuide((message) => text("voice-copy", message));
+const gpsTracker = new GpsTracker({
+  position: receivePosition,
+  error: gpsError,
+  wakeStatus: (message) => text("wake-status", message),
+  suspend: (reason) => {
+    runner.interrupt(Date.now(), reason);
+    checkpoint();
+    voice.cancel();
+    renderRun();
+  },
+  resume: () => {
+    runner.checkSignal(Date.now());
+    runner.reacquire(Date.now());
+    text("gps-status", "Obnovuji GPS. Čekám na novou přesnou polohu…");
+    if (runner.incomplete) announceSignalGap();
+    renderRun();
+  },
+  tick: () => {
+    if (runner.checkSignal(Date.now())) {
+      announceSignalGap();
+      checkpoint();
+      renderRun();
+    }
+  },
+});
 try {
   voice.enabled = storagePort.getItem("runguide.voice") !== "false";
   input("voice-enabled").checked = voice.enabled;
@@ -323,10 +348,7 @@ function renderRun() {
   text("live-time", formatTime(seconds));
   text("live-distance", formatDistance(runner.meters));
   text("live-pace", formatPace(pace));
-  text(
-    "average-pace",
-    formatPace(runner.meters > 10 ? (seconds * 1000) / runner.meters : null),
-  );
+  text("average-pace", formatPace(runner.averagePace(now)));
   const delta =
     pace === null ? null : Math.round(pace - targetPace(runner.goal));
   text(
@@ -337,9 +359,11 @@ function renderRun() {
   text("remaining-distance", `${formatDistance(remaining.remainingMeters)} km`);
   text(
     "remaining-time",
-    remaining.remainingMeters === 0
-      ? "Vzdálenostní cíl splněn."
-      : `Do cílového času ${formatTime(remaining.remainingSeconds)}`,
+    runner.incomplete
+      ? "Zbývající vzdálenost je jen podle zachycené GPS. Část běhu chybí."
+      : remaining.remainingMeters === 0
+        ? "Vzdálenostní cíl splněn."
+        : `Do cílového času ${formatTime(remaining.remainingSeconds)}`,
   );
   show("start-run", !active());
   show("pause-run", ["running", "acquiring"].includes(runner.phase));
@@ -364,16 +388,26 @@ function renderRun() {
     paused: "Chvíle na nádech.",
     finished: pendingRun ? "Ještě uložit běh." : "Dobrý běh. Hotovo.",
   };
-  text("run-title", labels[runner.phase]);
-  if (
-    runner.phase === "running" &&
-    runner.lastFix &&
-    now - runner.lastFix.timestamp > 10000
-  )
-    text(
-      "gps-status",
-      "Signál GPS se přerušil. Tempo teď nehlásíme; čas dál běží.",
-    );
+  text(
+    "run-title",
+    runner.interruption ? "GPS záznam se přerušil." : labels[runner.phase],
+  );
+  show("recording-status", runner.incomplete);
+  text(
+    "recording-status",
+    runner.interruption
+      ? "GPS neměří. Čas dál běží, vzdálenost chybí. Nech aplikaci otevřenou a telefon odemčený. Průměrné tempo nelze určit."
+      : runner.recoveryUncertain
+        ? "Neúplný záznam po obnovení aplikace. Čas je zachovaný jen do posledního uložení a za další měření; dobu mimo aplikaci neznáme. Vzdálenost je jen zachycená GPS, průměrné tempo nelze určit."
+        : "Záznam obsahuje výpadek GPS. Čas zahrnuje výpadek, vzdálenost je jen zachycená část. Průměrné tempo nelze určit.",
+  );
+}
+function announceSignalGap() {
+  if (Date.now() - lastSignalAdviceAt < 60000) return;
+  voice.speak(
+    "Záznam GPS má výpadek. Nech aplikaci otevřenou a telefon odemčený.",
+  );
+  lastSignalAdviceAt = Date.now();
 }
 function checkpoint() {
   const draft = runner.checkpoint(Date.now());
@@ -385,38 +419,13 @@ function checkpoint() {
     report(error);
   }
 }
-async function lockScreen() {
-  if (!("wakeLock" in navigator) || document.visibilityState !== "visible")
-    return;
-  const generation = gpsGeneration;
-  try {
-    const requested = await navigator.wakeLock.request("screen");
-    if (
-      generation !== gpsGeneration ||
-      runner.phase !== "running" ||
-      document.hidden
-    ) {
-      await requested.release();
-      return;
-    }
-    await wakeLock?.release();
-    wakeLock = requested;
-    text("wake-status", "Displej zůstává při běhu rozsvícený.");
-  } catch {
-    text("wake-status", "Automatické zhasnutí displeje se nepodařilo vypnout.");
-  }
-}
 function stopGps() {
   navigation.resetConfidence();
-  gpsGeneration++;
-  if (watch !== null) navigator.geolocation.clearWatch(watch);
-  watch = null;
-  void wakeLock?.release().catch(() => undefined);
-  wakeLock = null;
-  text("wake-status", "");
+  gpsTracker.stop();
 }
 function gpsError(code: number) {
   navigation.resetConfidence();
+  if (runner.interrupt(Date.now(), "gps-error")) announceSignalGap();
   text(
     "gps-status",
     code === 1
@@ -428,92 +437,82 @@ function gpsError(code: number) {
   if (code === 1) {
     runner.pause(Date.now());
     stopGps();
-    checkpoint();
-    renderRun();
   }
+  checkpoint();
+  renderRun();
 }
 function beginGps() {
-  const generation = ++gpsGeneration;
   text("gps-status", "Čekám na GPS s přesností do 35 metrů…");
-  try {
-    watch = navigator.geolocation.watchPosition(
-      (position) => {
-        if (generation !== gpsGeneration) return;
-        const {
-          latitude: lat,
-          longitude: lng,
-          accuracy,
-          speed,
-        } = position.coords;
-        const now = Date.now(),
-          wasWaiting = runner.phase === "acquiring";
-        const fix = {
-          lat,
-          lng,
-          accuracy,
-          speed,
-          timestamp: position.timestamp,
-        };
-        const result = runner.ingest(fix, now);
-        if (result === "ignored") return;
-        if (result === "weak" || result === "jump" || result === "stale") {
-          navigation.resetConfidence();
-          text(
-            "gps-status",
-            result === "weak"
-              ? "GPS je nepřesná. Tento vzorek nepřičítám k trase."
-              : "Neplatný GPS vzorek byl vynechán.",
-          );
-          renderRun();
-          return;
-        }
-        text(
-          "gps-status",
-          `GPS ±${Math.round(accuracy)} m · záznam v telefonu`,
-        );
-        map.locate(fix, accuracy, wasWaiting);
-        map.setTrace(runner.trace);
-        if (wasWaiting) {
-          voice.speak("GPS je připravená. Měříme běh.");
-          void lockScreen();
-        }
-        const instruction = navigation.update(fix, now);
-        runner.navigationNext = navigation.next;
-        if (instruction) voice.speak(instruction, "navigation", now);
-        const pace = runner.currentPace(now),
-          advice = paceAdvice(
-            pace,
-            targetPace(runner.goal),
-            runner.elapsed(now),
-            now,
-            lastAdviceAt,
-          );
-        if (!instruction && !navigation.hasPriority && advice) {
-          const messages = {
-            fast: "Běžíš rychleji než svůj cíl. Zkus trochu zpomalit.",
-            slow: "Běžíš pomaleji než svůj cíl. Jestli se cítíš dobře, lehce přidej.",
-            "on-target": "Držíš cílové tempo. Pokračuj ve svém rytmu.",
-          };
-          if (
-            voice.speak(
-              `${messages[advice]} Aktuální tempo ${formatSpokenPace(pace)}.`,
-              "pace",
-              now,
-            )
-          )
-            lastAdviceAt = now;
-        }
-        if (now - lastCheckpointAt >= 5000) checkpoint();
-        renderRun();
-      },
-      (error) => {
-        if (generation === gpsGeneration) gpsError(error.code);
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+  gpsTracker.start();
+}
+function receivePosition(position: GeolocationPosition) {
+  const { latitude: lat, longitude: lng, accuracy, speed } = position.coords;
+  const now = Date.now(),
+    wasWaiting = runner.phase === "acquiring";
+  const fix = {
+    lat,
+    lng,
+    accuracy,
+    speed,
+    timestamp: position.timestamp,
+  };
+  const previousGaps = runner.gaps;
+  const wasInterrupted = !!runner.interruption;
+  const result = runner.ingest(fix, now);
+  if (runner.gaps > previousGaps) announceSignalGap();
+  if (result === "ignored") return;
+  if (result === "weak" || result === "jump" || result === "stale") {
+    navigation.resetConfidence();
+    text(
+      "gps-status",
+      result === "weak"
+        ? "GPS je nepřesná. Tento vzorek nepřičítám k trase."
+        : "Neplatný GPS vzorek byl vynechán.",
     );
-  } catch {
-    gpsError(1);
+    renderRun();
+    return;
   }
+  text("gps-status", `GPS ±${Math.round(accuracy)} m · záznam v telefonu`);
+  gpsTracker.receivedUsableFix();
+  map.locate(fix, accuracy, wasWaiting);
+  map.setTrace(runner.trace);
+  if (wasWaiting) {
+    voice.speak("GPS je připravená. Měříme běh.");
+  } else if (wasInterrupted) {
+    if (now - lastRecoveryAdviceAt >= 60000) {
+      voice.speak("GPS znovu měří. Chybějící část trasy zůstává označená.");
+      lastRecoveryAdviceAt = now;
+    }
+    lastAdviceAt = now;
+  }
+  const instruction = navigation.update(fix, now);
+  runner.navigationNext = navigation.next;
+  if (instruction) voice.speak(instruction, "navigation", now);
+  const pace = runner.currentPace(now),
+    advice = paceAdvice(
+      pace,
+      targetPace(runner.goal),
+      runner.elapsed(now),
+      now,
+      lastAdviceAt,
+    );
+  if (!instruction && advice) {
+    const messages = {
+      fast: "Běžíš rychleji než svůj cíl. Zkus trochu zpomalit.",
+      slow: "Běžíš pomaleji než svůj cíl. Jestli se cítíš dobře, lehce přidej.",
+      "on-target": "Držíš cílové tempo. Pokračuj ve svém rytmu.",
+    };
+    if (
+      voice.speak(
+        `${messages[advice]} Aktuální tempo ${formatPace(pace)} na kilometr.`,
+        "pace",
+        now,
+      )
+    )
+      lastAdviceAt = now;
+  }
+  if (result === "accepted" || now - lastCheckpointAt >= 5000) checkpoint();
+  renderRun();
 }
 function savePending() {
   if (!pendingRun) return;
@@ -667,14 +666,17 @@ action("start-run", () => {
   }
   repository.saveDraft(null);
   runner.start(target, route, planner.routing);
+  checkpoint();
   navigation = new Navigator(route);
   lastAdviceAt = Date.now();
+  lastSignalAdviceAt = -Infinity;
+  lastRecoveryAdviceAt = -Infinity;
   map.setTrace([]);
   renderRun();
   renderRoute();
   text(
     "run-message",
-    "Tempo hlásíme až po ustálení měření. Pauza se do času nepočítá.",
+    "Tempo hlásíme až po ustálení GPS. Pauza se do času nepočítá. Výpadek GPS není pauza a označí běh jako neúplný.",
   );
   voice.speak("Hledám GPS. Při běhu nech aplikaci otevřenou.");
   beginGps();
@@ -690,7 +692,8 @@ action("pause-run", () => {
 });
 action("resume-run", () => {
   if (runner.phase === "paused") {
-    runner.resume();
+    runner.resume(Date.now());
+    checkpoint();
     lastAdviceAt = Date.now();
     renderRun();
     beginGps();
@@ -725,6 +728,7 @@ action("restore-run", () => {
   if (!draft) return;
   runner.restore(draft);
   goalDistanceSource = "manual";
+  checkpoint();
   planner.restoreRun(draft.route, draft.routing);
   navigation = new Navigator(route);
   navigation.next = draft.navigationNext;
@@ -858,21 +862,10 @@ action("logout", async () => {
     await updateAccount();
   }
 });
-window.addEventListener("pagehide", () => {
-  if (active()) checkpoint();
-  voice.cancel();
-});
 document.addEventListener("visibilitychange", () => {
   if (!active()) return;
   checkpoint();
   if (document.hidden) voice.cancel();
-  else if (runner.phase === "running") {
-    void lockScreen();
-    text(
-      "run-message",
-      "Aplikace je opět otevřená. Případnou mezeru GPS nepropojujeme smyšlenou trasou.",
-    );
-  }
 });
 window.addEventListener("beforeunload", (event) => {
   if (active() || pendingRun) event.preventDefault();
