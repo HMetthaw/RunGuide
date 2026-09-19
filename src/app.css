@@ -500,6 +500,12 @@ body[data-offline="true"] .connection-status::before {
   font: 11px var(--mono);
   color: var(--muted);
 }
+#goal-input-hint {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 #goal-error:not(:empty) {
   margin-top: 12px;
   color: var(--error);

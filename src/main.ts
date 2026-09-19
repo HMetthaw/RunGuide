@@ -1,10 +1,5 @@
-import {
-  goalSchema,
-  type Goal,
-  type GoalDistanceSource,
-  type Point,
-  type Run,
-} from "./types/models";
+import type { Goal, GoalDistanceSource, Point, Run } from "./types/models";
+import { parseGoalInput } from "./domain/goal-input";
 import { Runner } from "./domain/runner";
 import { Navigator } from "./domain/navigation";
 import { distance } from "./domain/geo";
@@ -160,10 +155,22 @@ function addWaypoint(point: Point) {
 }
 
 function goal(): Goal | null {
-  const parsed = goalSchema.safeParse({
-    distanceKm: Number(input("goal-distance").value),
-    durationMinutes: Number(input("goal-time").value),
-  });
+  const parsed = parseGoalInput(
+    input("goal-distance").value,
+    input("goal-time").value,
+  );
+  for (const [id, field] of [
+    ["goal-distance", "distanceKm"],
+    ["goal-time", "durationMinutes"],
+  ]) {
+    input(id).setAttribute(
+      "aria-invalid",
+      String(
+        !parsed.success &&
+          parsed.error.issues.some((issue) => issue.path[0] === field),
+      ),
+    );
+  }
   return parsed.success ? parsed.data : null;
 }
 function renderRoute(fit = false) {

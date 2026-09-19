@@ -446,13 +446,11 @@
                     <span class="input-wrap"
                       ><input
                         id="goal-distance"
-                        type="number"
-                        min="0.1"
-                        max="100"
-                        step="0.001"
+                        type="text"
                         value="5"
                         required=""
                         inputmode="decimal"
+                        aria-describedby="goal-input-hint goal-error"
                       /><span>km</span></span
                     ></label
                   >
@@ -461,18 +459,20 @@
                     <span class="input-wrap"
                       ><input
                         id="goal-time"
-                        type="number"
-                        min="1"
-                        max="1440"
-                        step="0.5"
+                        type="text"
                         value="30"
                         required=""
                         inputmode="decimal"
+                        aria-describedby="goal-input-hint goal-error"
                       /><span>min</span></span
                     ></label
                   >
                 </div>
               </fieldset>
+              <p id="goal-input-hint">
+                Můžeš zadat čárku i tečku, např. 5,55 km a 27,5 min. 27,5 min
+                znamená 27 minut a 30 sekund.
+              </p>
               <div class="target-pace">
                 <span>Cílové tempo</span
                 ><strong
