@@ -276,7 +276,8 @@ describe("coaching decisions", () => {
       coach.advise(snapshot(240, { traceIncomplete: true }))!,
       format,
     );
-    expect(uncertain).toContain("Orientační průměr podle GPS");
+    expect(uncertain).toContain("Průměrné tempo a splnění cíle");
+    expect(uncertain).not.toContain("6 minut");
     expect(uncertain).toContain("nelze spolehlivě posoudit");
     expect(uncertain).not.toContain("zvládl");
   });

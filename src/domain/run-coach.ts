@@ -152,14 +152,13 @@ export function coachingMessage(
     };
     return `Aktuální tempo ${spokenPace(advice.pace)}.${advice.timeExpired ? "" : ` ${messages[advice.trend]}`}`;
   }
-  const averageLabel = advice.traceIncomplete
-    ? "Orientační průměr podle GPS"
-    : advice.kind === "completion"
+  if (advice.traceIncomplete || advice.assessment === "uncertain")
+    return "Záznam GPS není úplný. Průměrné tempo a splnění cíle teď nelze spolehlivě posoudit.";
+  const averageLabel =
+    advice.kind === "completion"
       ? "Průměr při dosažení cílové vzdálenosti"
       : "Dosavadní průměrné tempo";
   const average = `${averageLabel} ${spokenPace(advice.pace)}.`;
-  if (advice.assessment === "uncertain")
-    return `${average} Záznam GPS není úplný. Splnění cíle teď nelze spolehlivě posoudit.`;
   const messages: Record<Exclude<GoalAssessment, "uncertain">, string> = {
     ahead:
       "Při zachování tohoto průměru bys cílovou vzdálenost zvládl s časovou rezervou.",

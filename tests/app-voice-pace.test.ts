@@ -74,7 +74,7 @@ it("speaks current pace and whole-run progress, excludes pauses and qualifies GP
     synth.speak.mock.calls
       .map(([utterance]) => utterance)
       .filter((utterance) =>
-        /Dosavadní průměr|Orientační průměr/.test(utterance.text),
+        /Dosavadní průměr|Průměrné tempo a splnění cíle/.test(utterance.text),
       );
   async function gps(seconds: number, meters: number, pace: number) {
     vi.setSystemTime(epoch + seconds * 1000);
@@ -148,13 +148,17 @@ it("speaks current pace and whole-run progress, excludes pauses and qualifies GP
   const messagesBeforeGap = synth.speak.mock.calls.length;
   meters += 200;
   await gps(550, meters, 539.9);
-  expect(synth.speak).toHaveBeenCalledTimes(messagesBeforeGap);
+  expect(synth.speak).toHaveBeenCalledTimes(messagesBeforeGap + 1);
+  expect(synth.speak.mock.calls.at(-1)![0].text).toContain(
+    "Záznam GPS má výpadek",
+  );
+  expect(document.getElementById("average-pace")!.textContent).toBe("—");
   for (let seconds = 551; seconds <= 640; seconds++) {
     meters += 1000 / 539.9;
     await gps(seconds, meters, 539.9);
   }
   expect(progressUtterances().at(-1)!.text).toContain(
-    "Orientační průměr podle GPS",
+    "Průměrné tempo a splnění cíle",
   );
   expect(progressUtterances().at(-1)!.text).toContain(
     "nelze spolehlivě posoudit",

@@ -46,7 +46,9 @@ export function setupGoalCalculator(onChange: () => void) {
     distance.setAttribute(
       "aria-invalid",
       String(
-        !goalSchema.shape.distanceKm.safeParse(parseDecimalInput(distance.value)).success,
+        !goalSchema.shape.distanceKm.safeParse(
+          parseDecimalInput(distance.value),
+        ).success,
       ),
     );
     time.setAttribute(

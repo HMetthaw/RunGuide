@@ -34,11 +34,12 @@ požadovaného zbývajícího tempa je oddělený od předpovědi při dosavadn�
 ## Nejistá GPS a dosažení cíle
 
 Při nepřesné nebo staré GPS a během ustalování nejsou běžné rady vysílány.
-Po zaznamenané mezeře v trase zůstává průměr označený jako orientační a hlas
-výslovně říká, že splnění cíle nelze spolehlivě posoudit. Stejně konzervativně
-postupuje obnovený záznam ze zálohy, protože nelze znát pohyb po posledním
-checkpointu. Chybějící vzdálenost se nedopočítává. Čas přebíráme z `Runner.elapsed`;
-pokud při výpadku podle pravidel jádra pokračoval, ovlivní orientační průměr.
+Po zaznamenané mezeře v trase se číselný průměr nezobrazuje ani nevyslovuje;
+hlas výslovně říká, že průměrné tempo a splnění cíle nelze spolehlivě posoudit.
+Stejně konzervativně postupuje obnovený záznam ze zálohy, pokud byl běh při
+posledním uložení aktivní nebo jeho stav není známý. Obnovení řádně pozastaveného
+úplného běhu samo o sobě záznam neznehodnotí. Chybějící vzdálenost se nedopočítává.
+Čas přebíráme z `Runner.elapsed`; výpadek GPS není automatická pauza.
 
 Dosažení naměřené cílové vzdálenosti se oznámí jednou, nejdříve 20 aktivních
 sekund od poslední rady. Výsledek se zachytí při prvním pozorovaném dosažení,

@@ -224,4 +224,38 @@ it("syncs fractional route lengths through planning, goals and saved plans while
   await vi.advanceTimersByTimeAsync(1100);
   expect(field("goal-distance").value).toBe("5.55");
   expect(disabled("start-run")).toBe(false);
+
+  // Route synchronization, decimal parsing and the pace editor must cooperate.
+  edit("goal-distance", "5,55");
+  edit("goal-time", "27,5");
+  edit("goal-pace-minutes", "5");
+  edit("goal-pace-seconds", "50");
+  expect(field("goal-time").value).toBe("32.375");
+  expect($("target-pace").textContent).toBe("5:50");
+  await click("save-route");
+  const pacedPlan = new LocalRepository(localStorage).plans()[0];
+  expect(pacedPlan.goal).toEqual({ distanceKm: 5.55, durationMinutes: 32.375 });
+  expect(pacedPlan.goalDistanceSource).toBe("manual");
+  selectPlan(pacedPlan.id);
+  expect($("target-pace").textContent).toBe("5:50");
+  await click("use-route-distance");
+  mocks.calculate.mockResolvedValueOnce({
+    ...routed,
+    routing: { ...routed.routing, distanceMeters: 588 },
+  } satisfies RoutedPath);
+  mocks.addPoint!({ lat: 50.006, lng: 14.009 });
+  await vi.advanceTimersByTimeAsync(1100);
+  expect(field("goal-distance").value).toBe("0.588");
+  expect(field("goal-time").value).toBe("32.375");
+  edit("goal-pace-minutes", "5");
+  edit("goal-pace-seconds", "50");
+  expect(field("goal-time").value).toBe("3.43");
+  await click("save-route");
+  const shortPlan = new LocalRepository(localStorage).plans()[0];
+  expect(shortPlan.goal.distanceKm).toBe(0.588);
+  expect(shortPlan.goal.durationMinutes).toBeCloseTo(3.43, 12);
+  selectPlan(pacedPlan.id);
+  selectPlan(shortPlan.id);
+  expect(field("goal-distance").value).toBe("0.588");
+  expect($("target-pace").textContent).toBe("5:50");
 });

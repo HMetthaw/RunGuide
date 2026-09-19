@@ -50,7 +50,7 @@ describe("GPS distance accuracy", () => {
     expect(runner.trace).toHaveLength(1);
   });
 
-  it("does not use a rejected speed reading to start the clock or split the trace", () => {
+  it("rejects impossible speeds and counts a silent outage once without waiting for recovery", () => {
     const runner = start();
     expect(ingest(runner, fix(0, 0, 30))).toBe("jump");
     expect(runner.phase).toBe("acquiring");
@@ -58,7 +58,8 @@ describe("GPS distance accuracy", () => {
     ingest(runner, fix(1, 0, 3));
     ingest(runner, fix(2, 3, 3));
     for (let i = 20; i < 30; i++) ingest(runner, fix(i, 60, 30));
-    expect(runner.gaps).toBe(0);
+    expect(runner.gaps).toBe(1);
+    expect(runner.interruption?.reason).toBe("gps-timeout");
     ingest(runner, fix(30, 90, 3));
     expect(runner.gaps).toBe(1);
     expect(runner.meters).toBe(0);
@@ -83,7 +84,12 @@ describe("GPS distance accuracy", () => {
         expect(Math.abs(runner.meters - expected)).toBeLessThan(3.5);
         const completed = runner.finish(epoch + (meters / 3) * 1000)!;
         expect(completed.distanceMeters).toBe(runner.meters);
-        expect(completed.quality).toEqual({ rejectedFixes: 0, gaps: 0 });
+        expect(completed.quality).toEqual({
+          rejectedFixes: 0,
+          gaps: 0,
+          untrackedSeconds: 0,
+          recoveryUncertain: false,
+        });
       }
     },
   );
