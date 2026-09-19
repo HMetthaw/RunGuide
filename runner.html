@@ -750,6 +750,12 @@
             </section>
             <section class="settings-card voice-card-settings">
               <h2>Hlasový průvodce</h2>
+              <label class="stack-label" for="voice-select"
+                >Český hlas
+                <select id="voice-select" aria-describedby="voice-support">
+                  <option value="">Automaticky · český hlas telefonu</option>
+                </select>
+              </label>
               <div class="voice-settings">
                 <label class="switch-label"
                   ><input id="voice-enabled" type="checkbox" checked="" /><span
@@ -767,7 +773,8 @@
                   >Vyzkoušet
                 </button>
               </div>
-              <p id="voice-support" class="status"></p>
+              <p id="voice-support" class="status" role="status"></p>
+              <p id="voice-preview-status" class="status" role="status"></p>
             </section>
           </div>
           <div class="settings-card data-settings">

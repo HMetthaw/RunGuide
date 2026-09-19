@@ -15,6 +15,7 @@ import { RouteMap } from "./services/map";
 import { RoutePlanner } from "./services/route-planner";
 import { MAX_WAYPOINTS } from "./services/routing";
 import { VoiceGuide } from "./services/voice";
+import { setupVoiceSettings } from "./services/voice-settings";
 import { CloudRepository } from "./services/cloud";
 import { download, gpx } from "./services/export";
 import { historyCard } from "./services/history";
@@ -743,18 +744,7 @@ input("voice-enabled").addEventListener("change", () => {
   }
   if (!voice.enabled) voice.cancel();
 });
-action("test-voice", () => {
-  voice.speak(
-    "Ahoj, tady RunGuide. Při běhu ti pomůžu držet tvoje cílové tempo.",
-    "test",
-  );
-});
-text(
-  "voice-support",
-  voice.available
-    ? "Před během vyzkoušej hlas se svými sluchátky."
-    : "Tento prohlížeč nemá hlasový výstup. Pokyny uvidíš na displeji.",
-);
+setupVoiceSettings(voice, storagePort);
 action("goal-use-route", () => input("use-route-distance").click());
 action("export-all", () =>
   download(

@@ -79,3 +79,10 @@
 - Oranžové akcenty nahrazeny tlumenou zlatou ve světlém i tmavém režimu, včetně trasy na mapě. Výplně tlačítek mají samostatnou barvu a tmavý text; kontrast hlavních tlačítek je nejméně 7,99 : 1, zlatého textu na světlém pozadí 5,21 : 1.
 - Ověřen mobilní náhled v obou režimech, TypeScript, ESLint, všech 58 testů a produkční build.
 
+
+## Výběr českého hlasu · 19. 9. 2026
+
+- Menu nabízí české hlasy zpřístupněné prohlížečem, automatickou volbu a ukázku. Vybraný voiceURI se ukládá místně; voiceschanged obnovuje seznam po pozdním načtení. Nedostupný uložený hlas dočasně zastoupí automatická čeština.
+- Ukázka používá vybraný hlas i při vypnutých pokynech a chyby zvuku zobrazuje přímo v menu. Volba vypnutí pokynů se ukázkou nemění.
+- Prošlo 61 testů, TypeScript, lint a build. V mobilním náhledu ověřen dostupný hlas Microsoft Jakub a obnovení volby po reloadu. Nabídka a slyšitelná kvalita na iPhonu vyžadují ověření na uživatelově telefonu.
+
