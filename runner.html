@@ -455,7 +455,7 @@
                     ></label
                   >
                   <label for="goal-time"
-                    >Čas
+                    >Cílový čas v minutách
                     <span class="input-wrap"
                       ><input
                         id="goal-time"
@@ -468,6 +468,42 @@
                     ></label
                   >
                 </div>
+                <fieldset
+                  class="pace-editor"
+                  aria-describedby="goal-rule goal-error"
+                >
+                  <legend>Cílové tempo <span>(min/km)</span></legend>
+                  <div class="goal-grid">
+                    <label for="goal-pace-minutes"
+                      >Minuty na kilometr
+                      <span class="input-wrap"
+                        ><input
+                          id="goal-pace-minutes"
+                          type="text"
+                          inputmode="numeric"
+                          pattern="[0-9]+"
+                          value="6"
+                          required=""
+                          aria-describedby="goal-rule goal-error"
+                        /><span>min</span></span
+                      ></label
+                    >
+                    <label for="goal-pace-seconds"
+                      >Sekundy (00–59)
+                      <span class="input-wrap"
+                        ><input
+                          id="goal-pace-seconds"
+                          type="text"
+                          inputmode="numeric"
+                          pattern="[0-5]?[0-9]"
+                          value="00"
+                          required=""
+                          aria-describedby="goal-rule goal-error"
+                        /><span>s</span></span
+                      ></label
+                    >
+                  </div>
+                </fieldset>
               </fieldset>
               <p id="goal-input-hint">
                 Můžeš zadat čárku i tečku, např. 5,55 km a 27,5 min. 27,5 min
@@ -480,6 +516,11 @@
                   ><small> / km</small></strong
                 >
               </div>
+              <p id="goal-rule" class="goal-rule">
+                Změna tempa přepočítá čas. Změna času přepočítá tempo. Při změně
+                vzdálenosti zachováme čas a přepočítáme tempo. Čas je v
+                desetinných minutách: 27,5 min = 27 min 30 s.
+              </p>
               <p id="goal-error" role="status"></p>
             </form>
             <div class="step-actions">
@@ -495,8 +536,10 @@
             <span class="eyebrow">NASTAV SI VLASTNÍ RYTMUS</span>
             <h2>Tempo, které sedí tobě.</h2>
             <p>
-              Zadej vzdálenost a čas. Z nich spočítáme tempo a během běhu ti ho
-              připomeneme do sluchátek.
+              Zadej vzdálenost a cílový čas, nebo si uprav tempo přímo v
+              minutách a sekundách na kilometr. Tempo 5:50 min/km znamená 5
+              minut a 50 sekund na kilometr. Během běhu ti ho připomeneme do
+              sluchátek.
             </p>
             <p id="goal-route-copy" role="status"></p>
             <button type="button" id="goal-use-route">Použít délku trasy</button

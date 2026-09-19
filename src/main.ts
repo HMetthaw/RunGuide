@@ -1,5 +1,4 @@
 import type { Goal, GoalDistanceSource, Point, Run } from "./types/models";
-import { parseGoalInput } from "./domain/goal-input";
 import { Runner } from "./domain/runner";
 import { Navigator } from "./domain/navigation";
 import { distance } from "./domain/geo";
@@ -27,6 +26,7 @@ import { setupPlannerInterface } from "./services/planner-ui";
 import { setupTheme } from "./services/theme";
 import { setupAppNavigation } from "./services/app-navigation";
 import { setupDashboard } from "./services/dashboard";
+import { setupGoalCalculator } from "./services/goal-calculator";
 import "./app.css";
 import "./pages.css";
 import "@fontsource/barlow-condensed/latin-ext-800.css";
@@ -111,7 +111,7 @@ const planner = new RoutePlanner(() => {
     planner.routing
   ) {
     const km = routeGoalDistance(planner.distanceMeters);
-    if (km !== null) input("goal-distance").value = String(km);
+    if (km !== null) goalCalculator.setDistance(km);
   }
   renderRoute();
 });
@@ -144,6 +144,7 @@ const dashboard = setupDashboard(
   () => repository.runs(),
   () => repository.key,
 );
+const goalCalculator = setupGoalCalculator(() => renderRoute());
 
 function addWaypoint(point: Point) {
   if (active()) return;
@@ -155,23 +156,7 @@ function addWaypoint(point: Point) {
 }
 
 function goal(): Goal | null {
-  const parsed = parseGoalInput(
-    input("goal-distance").value,
-    input("goal-time").value,
-  );
-  for (const [id, field] of [
-    ["goal-distance", "distanceKm"],
-    ["goal-time", "durationMinutes"],
-  ]) {
-    input(id).setAttribute(
-      "aria-invalid",
-      String(
-        !parsed.success &&
-          parsed.error.issues.some((issue) => issue.path[0] === field),
-      ),
-    );
-  }
-  return parsed.success ? parsed.data : null;
+  return goalCalculator.readGoal();
 }
 function renderRoute(fit = false) {
   map.setRoute(route, fit, planner.routing?.waypoints ?? planner.waypoints);
@@ -199,7 +184,7 @@ function renderRoute(fit = false) {
   text(
     "run-preparation-summary",
     !target
-      ? "Nejdřív oprav vzdálenost nebo čas v kroku Cíl a tempo."
+      ? "Nejdřív oprav vzdálenost, čas nebo tempo v kroku Cíl a tempo."
       : planner.blocked
         ? "Trasa není připravená. Vrať se na mapu a dokonči výpočet."
         : `Cíl ${target.distanceKm.toLocaleString("cs")} km · ${target.durationMinutes.toLocaleString("cs")} min · tempo ${formatPace(targetPace(target))} / km`,
@@ -223,10 +208,6 @@ function renderRoute(fit = false) {
       : `${difference >= 0 ? "+" : "−"}${formatDistance(Math.abs(difference))}`,
   );
   text("target-pace", target ? formatPace(targetPace(target)) : "—");
-  text(
-    "goal-error",
-    target ? "" : "Zadej vzdálenost 0,1–100 km a čas 1–1 440 minut.",
-  );
   if (target && runner.phase === "idle") {
     runner.goal = target;
     renderRun();
@@ -545,9 +526,7 @@ function savePending() {
 
 input("goal-distance").addEventListener("input", () => {
   goalDistanceSource = "manual";
-  renderRoute();
 });
-input("goal-time").addEventListener("input", renderRoute.bind(null, false));
 element("goal-form").addEventListener("submit", (event) =>
   event.preventDefault(),
 );
@@ -590,7 +569,7 @@ action("use-route-distance", () => {
     return;
   }
   goalDistanceSource = "route";
-  input("goal-distance").value = String(km);
+  goalCalculator.setDistance(km);
   renderRoute();
 });
 action("locate-me", () => {
@@ -648,8 +627,7 @@ element("saved-routes").addEventListener("change", () => {
   if (!plan) return;
   // Older plans did not record intent and may still contain the default 5 km.
   goalDistanceSource = plan.goalDistanceSource ?? "route";
-  input("goal-distance").value = String(plan.goal.distanceKm);
-  input("goal-time").value = String(plan.goal.durationMinutes);
+  goalCalculator.setGoal(plan.goal);
   input("route-name").value = plan.name;
   planner.load(plan.points, plan.routing);
   renderRoute(true);
@@ -747,8 +725,7 @@ action("restore-run", () => {
   planner.restoreRun(draft.route, draft.routing);
   navigation = new Navigator(route);
   navigation.next = draft.navigationNext;
-  input("goal-distance").value = String(draft.goal.distanceKm);
-  input("goal-time").value = String(draft.goal.durationMinutes);
+  goalCalculator.setGoal(draft.goal);
   show("recovery", false);
   map.setTrace(runner.trace);
   renderRoute(true);

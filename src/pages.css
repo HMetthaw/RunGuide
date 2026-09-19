@@ -382,9 +382,38 @@ body.map-expanded .app-nav {
 }
 .goal-step .goal-card {
   padding: 30px;
+  container-type: inline-size;
 }
 .goal-step .goal-grid {
   margin-top: 26px;
+}
+.pace-editor {
+  margin-top: 24px;
+}
+.pace-editor legend {
+  font-size: 13px;
+  font-weight: 700;
+}
+.pace-editor legend span {
+  color: var(--muted);
+  font-weight: 400;
+}
+.goal-step .pace-editor .goal-grid {
+  margin-top: 10px;
+}
+.goal-rule {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.goal-card input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+@container (max-width: 360px) {
+  #goal-fields > .goal-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .goal-step .target-pace {
   margin-top: 28px;
