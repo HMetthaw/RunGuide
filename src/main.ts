@@ -1,7 +1,14 @@
-import { goalSchema, type Goal, type Point, type Run } from "./types/models";
+import {
+  goalSchema,
+  type Goal,
+  type GoalDistanceSource,
+  type Point,
+  type Run,
+} from "./types/models";
 import { Runner } from "./domain/runner";
 import { Navigator } from "./domain/navigation";
 import { distance } from "./domain/geo";
+import { routeGoalDistance } from "./domain/goal-distance";
 import {
   formatDistance,
   formatPace,
@@ -99,8 +106,18 @@ try {
 let repository = new LocalRepository(storagePort);
 const cloud = new CloudRepository();
 let route: Point[] = [];
+let goalDistanceSource: GoalDistanceSource = "route";
 const planner = new RoutePlanner(() => {
   route = planner.points;
+  if (
+    !active() &&
+    goalDistanceSource === "route" &&
+    !planner.blocked &&
+    planner.routing
+  ) {
+    const km = routeGoalDistance(planner.distanceMeters);
+    if (km !== null) input("goal-distance").value = String(km);
+  }
   renderRoute();
 });
 let navigation = new Navigator([]);
@@ -519,7 +536,10 @@ function savePending() {
   renderRoute();
 }
 
-input("goal-distance").addEventListener("input", renderRoute.bind(null, false));
+input("goal-distance").addEventListener("input", () => {
+  goalDistanceSource = "manual";
+  renderRoute();
+});
 input("goal-time").addEventListener("input", renderRoute.bind(null, false));
 element("goal-form").addEventListener("submit", (event) =>
   event.preventDefault(),
@@ -557,11 +577,12 @@ action("clear-route", async () => {
 });
 action("use-route-distance", () => {
   if (active() || planner.blocked || !planner.routing) return;
-  const km = Math.round(planner.distanceMeters) / 1000;
-  if (km < 0.1 || km > 100) {
+  const km = routeGoalDistance(planner.distanceMeters);
+  if (km === null) {
     notice("Délka cíle musí být 0,1–100 km.");
     return;
   }
+  goalDistanceSource = "route";
   input("goal-distance").value = String(km);
   renderRoute();
 });
@@ -604,6 +625,7 @@ action("save-route", () => {
       input("route-name").value.trim() ||
       `Můj okruh ${repository.plans().length + 1}`,
     goal: target,
+    goalDistanceSource,
     points: route,
     routing: planner.routing,
     createdAt: new Date().toISOString(),
@@ -617,6 +639,8 @@ element("saved-routes").addEventListener("change", () => {
     .plans()
     .find((p) => p.id === input("saved-routes").value);
   if (!plan) return;
+  // Older plans did not record intent and may still contain the default 5 km.
+  goalDistanceSource = plan.goalDistanceSource ?? "route";
   input("goal-distance").value = String(plan.goal.distanceKm);
   input("goal-time").value = String(plan.goal.durationMinutes);
   input("route-name").value = plan.name;
@@ -712,6 +736,7 @@ action("restore-run", () => {
   const draft = repository.draft();
   if (!draft) return;
   runner.restore(draft);
+  goalDistanceSource = "manual";
   planner.restoreRun(draft.route, draft.routing);
   navigation = new Navigator(route);
   navigation.next = draft.navigationNext;

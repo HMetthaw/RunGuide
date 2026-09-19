@@ -22,10 +22,12 @@ export const routingSchema = z.object({
   waypoints: z.array(pointSchema).min(2).max(100),
   distanceMeters: z.number().finite().nonnegative(),
 });
+const goalDistanceSourceSchema = z.enum(["route", "manual"]);
 export const planSchema = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(1).max(100),
   goal: goalSchema,
+  goalDistanceSource: goalDistanceSourceSchema.optional(),
   points: z.array(pointSchema).min(2).max(5000),
   routing: routingSchema.optional(),
   createdAt: z.string().datetime(),
@@ -59,6 +61,7 @@ export interface RoutedPath {
 export type Fix = z.infer<typeof fixSchema>;
 export type TracePoint = z.infer<typeof tracePointSchema>;
 export type Goal = z.infer<typeof goalSchema>;
+export type GoalDistanceSource = z.infer<typeof goalDistanceSourceSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Run = z.infer<typeof runSchema>;
 export type RunPhase = "idle" | "acquiring" | "running" | "paused" | "finished";
