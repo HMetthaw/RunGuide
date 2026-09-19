@@ -98,7 +98,13 @@ export class Runner {
       return "stale";
     }
     this.lastSeen = fix.timestamp;
-    if (this.anchor && fix.timestamp - this.anchor.timestamp > 15000) {
+    if (fix.speed !== null && fix.speed > 9) {
+      this.rejectedFixes++;
+      return "jump";
+    }
+    // Signal continuity depends on received usable fixes, not on the last
+    // position far enough away to add distance (the runner may be standing).
+    if (this.lastFix && fix.timestamp - this.lastFix.timestamp > 15000) {
       this.anchor = null;
       this.samples = [];
       this.segment++;
@@ -118,15 +124,27 @@ export class Runner {
     }
     const delta = distance(this.anchor, fix),
       seconds = (fix.timestamp - this.anchor.timestamp) / 1000;
-    if (delta / seconds > 9 || (fix.speed !== null && fix.speed > 9)) {
+    const previous = this.lastFix!;
+    // Short-interval checks need the reported position uncertainty as well:
+    // two noisy fixes can otherwise look like a sprint at high sample rates.
+    const reachable =
+      9 * ((fix.timestamp - previous.timestamp) / 1000) +
+      previous.accuracy +
+      fix.accuracy;
+    if (delta / seconds > 9 || distance(previous, fix) > reachable) {
       this.rejectedFixes++;
       return "jump";
     }
     this.lastFix = fix;
     // Keep the anchor until meaningful movement exceeds measurement noise.
-    const moved =
-      delta >=
-      Math.max(3, Math.min(12, (this.anchor.accuracy + fix.accuracy) * 0.35));
+    const uncertainty = this.anchor.accuracy + fix.accuracy;
+    const movementThreshold = Math.max(3, Math.min(12, uncertainty * 0.35));
+    // A measured zero/near-zero speed corroborates stationary position noise.
+    // Unknown speed must still allow running; displacement beyond the reported
+    // uncertainty also wins over a stuck speed sensor.
+    const stationary =
+      fix.speed !== null && fix.speed < 0.5 && delta < uncertainty;
+    const moved = delta >= movementThreshold && !stationary;
     if (moved) {
       this.meters += delta;
       this.anchor = fix;

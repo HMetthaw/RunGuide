@@ -80,18 +80,28 @@ it("plans, saves and reloads a road route; blocks partial/error routes and retri
   );
   expect(disabled("start-run")).toBe(false);
   await click("use-route-distance");
-  expect(($("goal-distance") as HTMLInputElement).value).toBe("0.6");
+  expect(($("goal-distance") as HTMLInputElement).value).toBe("0.588");
+  expect(($("goal-distance") as HTMLInputElement).validity.stepMismatch).toBe(
+    false,
+  );
   await click("save-route");
   const stored: {
-    plans: { id: string; points: Point[]; routing: RoutedPath["routing"] }[];
+    plans: {
+      id: string;
+      points: Point[];
+      routing: RoutedPath["routing"];
+      goal: { distanceKm: number };
+    }[];
   } = JSON.parse(localStorage.getItem("runguide-v2:device")!);
   expect(stored.plans[0].points).toEqual(routed.points);
   expect(stored.plans[0].routing).toEqual(routed.routing);
+  expect(stored.plans[0].goal.distanceKm).toBe(0.588);
   await clear();
   const select = $("saved-routes") as HTMLSelectElement;
   select.value = stored.plans[0].id;
   select.dispatchEvent(new Event("change"));
   expect($("route-distance").textContent).toBe("0,59");
+  expect(($("goal-distance") as HTMLInputElement).value).toBe("0.588");
   expect(mocks.calculate).toHaveBeenCalledTimes(1);
   await click("undo-route");
   expect($("route-summary").textContent).toContain("1 bod");

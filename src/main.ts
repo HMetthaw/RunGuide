@@ -556,7 +556,7 @@ action("clear-route", async () => {
 });
 action("use-route-distance", () => {
   if (active() || planner.blocked || !planner.routing) return;
-  const km = Math.round(planner.distanceMeters / 100) / 10;
+  const km = Math.round(planner.distanceMeters) / 1000;
   if (km < 0.1 || km > 100) {
     notice("Délka cíle musí být 0,1–100 km.");
     return;

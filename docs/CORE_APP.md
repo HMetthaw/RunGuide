@@ -4,11 +4,12 @@
 
 - Cílová vzdálenost a čas, validace vstupu, tempo v sekundách/km.
 - Vlastní pěší trasa v mapě přes OSRM / FOSSGIS: propojení bodů po cestách, krok zpět, uzavření okruhu včetně cesty tam a zpět a více pojmenovaných plánů. Délka pochází z routeru, nikoli z úseček mezi kliknutími.
-- Převzetí délky plánu jako vzdálenostního cíle.
+- Převzetí délky plánu jako vzdálenostního cíle s rozlišením na metry (0,001 km). Délka z routeru se pro cíl zaokrouhluje pouze na celý metr; údaj v mapě se zobrazuje na dvě desetinná místa.
 - GPS měření se zahájením času až po použitelné poloze. Přesnost do 35 m; přeskočení starých, duplicitních a nepravděpodobných vzorků.
+- Skok polohy se kontroluje také vůči poslední použitelné GPS aktualizaci, i při stání. Nulová nebo téměř nulová rychlost brání přičítání pohybu uvnitř součtu hlášených nepřesností; při nedostupné rychlosti nebo pohybu za tuto mez pokračuje měření z poloh.
 - Aktuální tempo z posledních až 45 s, oddělený průměr, odchylka a zbývající čas/vzdálenost.
 - Pauza/obnovení: pauza a čekání na znovuzískání GPS se do aktivního času nepočítají. Běžné stání bez tlačítka pauzy se počítá.
-- Při výpadku přes 15 s vznikne oddělený segment. Chybějící vzdálenost se nedopočítává přímkou.
+- Při výpadku použitelných GPS aktualizací přes 15 s vznikne oddělený segment. Samotné stání výpadek nezpůsobuje. Chybějící vzdálenost se nedopočítává přímkou.
 - Český hlas s testovacím tlačítkem, vypnutím, prioritou navigace a nejméně 60 s mezi radami k tempu.
 - Automatický průběžný záznam přibližně každých 5 s; po obnovení stránky se běh nabízí v pauze. Při pádu může chybět posledních několik sekund.
 - Historie skutečných GPS stop: datum, čas, vzdálenost, tempo, původní cíl, malá mapa, poznámka, GPX export a smazání.
