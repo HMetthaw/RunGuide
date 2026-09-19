@@ -19,7 +19,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("sends minutes and seconds to Czech speech for fast, on-target and slow pace advice", async () => {
+it("speaks current pace and whole-run progress, excludes pauses and qualifies GPS gaps", async () => {
   vi.useFakeTimers();
   const epoch = 1789500000000;
   vi.setSystemTime(epoch);
@@ -70,10 +70,13 @@ it("sends minutes and seconds to Czech speech for fast, on-target and slow pace 
     synth.speak.mock.calls
       .map(([utterance]) => utterance)
       .filter((utterance) => utterance.text.includes("Aktuální tempo"));
-  let meters = 0;
-  for (let seconds = 0; seconds <= 180; seconds++) {
-    const pace = seconds <= 60 ? 333.33 : seconds <= 120 ? 495 : 539.9;
-    if (seconds > 0) meters += 1000 / pace;
+  const progressUtterances = () =>
+    synth.speak.mock.calls
+      .map(([utterance]) => utterance)
+      .filter((utterance) =>
+        /Dosavadní průměr|Orientační průměr/.test(utterance.text),
+      );
+  async function gps(seconds: number, meters: number, pace: number) {
     vi.setSystemTime(epoch + seconds * 1000);
     success!({
       coords: {
@@ -90,19 +93,74 @@ it("sends minutes and seconds to Czech speech for fast, on-target and slow pace 
       toJSON: () => ({}),
     });
     await vi.advanceTimersByTimeAsync(0);
+  }
+  let meters = 0;
+  for (let seconds = 0; seconds <= 300; seconds++) {
+    const pace = seconds <= 60 ? 333.33 : seconds <= 180 ? 495 : 539.9;
+    if (seconds > 0) meters += 1000 / pace;
+    await gps(seconds, meters, pace);
     if (seconds < 60) expect(paceUtterances()).toHaveLength(0);
-    if (seconds === 120)
+    if (seconds === 120) {
       expect(document.getElementById("live-pace")!.textContent).toBe("8:15");
+      expect(progressUtterances()).toHaveLength(1);
+      expect(progressUtterances()[0].text).toContain(
+        "Dosavadní průměrné tempo 6 minut 38 sekund na kilometr.",
+      );
+      expect(progressUtterances()[0].text).toContain(
+        "Při zachování tohoto průměru",
+      );
+    }
   }
 
   expect(paceUtterances().map((utterance) => utterance.text)).toEqual([
-    "Běžíš rychleji než svůj cíl. Zkus trochu zpomalit. Aktuální tempo 5 minut 33 sekund na kilometr.",
-    "Držíš cílové tempo. Pokračuj ve svém rytmu. Aktuální tempo 8 minut 15 sekund na kilometr.",
-    "Běžíš pomaleji než svůj cíl. Jestli se cítíš dobře, lehce přidej. Aktuální tempo 9 minut 0 sekund na kilometr.",
+    "Aktuální tempo 5 minut 33 sekund na kilometr. Běžíš rychleji než své cílové tempo. Zkus trochu zpomalit.",
+    "Aktuální tempo 8 minut 15 sekund na kilometr. Držíš přibližně cílové tempo. Pokračuj ve svém rytmu.",
+    "Aktuální tempo 9 minut 0 sekund na kilometr. Běžíš pomaleji než své cílové tempo. Jestli se cítíš dobře, lehce přidej.",
   ]);
+  expect(progressUtterances()).toHaveLength(2);
   for (const utterance of paceUtterances())
     expect(utterance.lang).toBe("cs-CZ");
   expect(document.getElementById("voice-copy")!.textContent).toBe(
     paceUtterances().at(-1)!.text,
   );
+
+  const averageBeforePause =
+    document.getElementById("average-pace")!.textContent;
+  document.getElementById("pause-run")!.click();
+  await vi.advanceTimersByTimeAsync(0);
+  vi.setSystemTime(epoch + 420000);
+  document.getElementById("resume-run")!.click();
+  await vi.advanceTimersByTimeAsync(0);
+  await gps(420, meters, 539.9);
+  expect(document.getElementById("average-pace")!.textContent).toBe(
+    averageBeforePause,
+  );
+  for (let seconds = 421; seconds <= 480; seconds++) {
+    meters += 1000 / 539.9;
+    await gps(seconds, meters, 539.9);
+    if (seconds < 480) expect(progressUtterances()).toHaveLength(2);
+  }
+  expect(progressUtterances()).toHaveLength(3);
+  expect(document.getElementById("live-time")!.textContent).toBe("6:00");
+
+  // A real recording gap loses distance; recovered current GPS must not turn
+  // the whole-run projection back into a confident result.
+  const messagesBeforeGap = synth.speak.mock.calls.length;
+  meters += 200;
+  await gps(550, meters, 539.9);
+  expect(synth.speak).toHaveBeenCalledTimes(messagesBeforeGap);
+  for (let seconds = 551; seconds <= 640; seconds++) {
+    meters += 1000 / 539.9;
+    await gps(seconds, meters, 539.9);
+  }
+  expect(progressUtterances().at(-1)!.text).toContain(
+    "Orientační průměr podle GPS",
+  );
+  expect(progressUtterances().at(-1)!.text).toContain(
+    "nelze spolehlivě posoudit",
+  );
+  for (const utterance of progressUtterances()) {
+    expect(utterance.lang).toBe("cs-CZ");
+    expect(utterance.text).not.toMatch(/\d+:\d{2}|hodin/);
+  }
 });

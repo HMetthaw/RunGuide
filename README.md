@@ -74,6 +74,7 @@ Cloud připrav podle [docs/BACKEND.md](docs/BACKEND.md). Veřejné `VITE_` hodno
 
 - [Plán MVP a pilotu](docs/PLAN.md)
 - [Popis aktuálního běžeckého jádra](docs/CORE_APP.md)
+- [Průměrné tempo, odhad cíle a ověření hlášení](docs/RUN_COACHING.md)
 - [Audit a výsledky testů](docs/AUDIT.md)
 - [Návrh backendu](docs/BACKEND.md)
 - [Pravidla pro agenty a vývoj](AGENTS.md)

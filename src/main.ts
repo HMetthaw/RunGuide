@@ -1,5 +1,6 @@
 import type { Goal, GoalDistanceSource, Point, Run } from "./types/models";
 import { Runner } from "./domain/runner";
+import { RunCoach, coachingMessage } from "./domain/run-coach";
 import { GpsTracker } from "./services/gps-tracker";
 import { Navigator } from "./domain/navigation";
 import { distance } from "./domain/geo";
@@ -9,7 +10,6 @@ import {
   formatPace,
   formatSpokenPace,
   formatTime,
-  paceAdvice,
   remainingTime,
   targetPace,
 } from "./domain/pace";
@@ -86,6 +86,7 @@ async function confirmAction(title: string, message: string): Promise<boolean> {
 }
 
 const runner = new Runner();
+const coach = new RunCoach();
 let storagePort: StoragePort;
 try {
   storagePort = window.localStorage;
@@ -117,8 +118,7 @@ const planner = new RoutePlanner(() => {
   renderRoute();
 });
 let navigation = new Navigator([]);
-let lastAdviceAt = 0,
-  lastCheckpointAt = 0;
+let lastCheckpointAt = 0;
 let lastSignalAdviceAt = -Infinity;
 let lastRecoveryAdviceAt = -Infinity;
 let pendingRun: Run | null = null;
@@ -130,12 +130,15 @@ const gpsTracker = new GpsTracker({
   error: gpsError,
   wakeStatus: (message) => text("wake-status", message),
   suspend: (reason) => {
+    navigation.resetConfidence();
     runner.interrupt(Date.now(), reason);
     checkpoint();
     voice.cancel();
     renderRun();
   },
   resume: () => {
+    navigation.resetConfidence();
+    coach.resume(runner.elapsed(Date.now()));
     runner.checkSignal(Date.now());
     runner.reacquire(Date.now());
     text("gps-status", "Obnovuji GPS. Čekám na novou přesnou polohu…");
@@ -144,6 +147,7 @@ const gpsTracker = new GpsTracker({
   },
   tick: () => {
     if (runner.checkSignal(Date.now())) {
+      navigation.resetConfidence();
       announceSignalGap();
       checkpoint();
       renderRun();
@@ -483,33 +487,24 @@ function receivePosition(position: GeolocationPosition) {
       voice.speak("GPS znovu měří. Chybějící část trasy zůstává označená.");
       lastRecoveryAdviceAt = now;
     }
-    lastAdviceAt = now;
+    coach.resume(runner.elapsed(now));
   }
   const instruction = navigation.update(fix, now);
   runner.navigationNext = navigation.next;
   if (instruction) voice.speak(instruction, "navigation", now);
-  const pace = runner.currentPace(now),
-    advice = paceAdvice(
-      pace,
-      targetPace(runner.goal),
-      runner.elapsed(now),
-      now,
-      lastAdviceAt,
-    );
-  if (!instruction && advice) {
-    const messages = {
-      fast: "Běžíš rychleji než svůj cíl. Zkus trochu zpomalit.",
-      slow: "Běžíš pomaleji než svůj cíl. Jestli se cítíš dobře, lehce přidej.",
-      "on-target": "Držíš cílové tempo. Pokračuj ve svém rytmu.",
-    };
-    if (
-      voice.speak(
-        `${messages[advice]} Aktuální tempo ${formatPace(pace)} na kilometr.`,
-        "pace",
-        now,
-      )
-    )
-      lastAdviceAt = now;
+  const activeSeconds = runner.elapsed(now);
+  const advice = coach.advise({
+    phase: runner.phase,
+    goal: runner.goal,
+    meters: runner.meters,
+    activeSeconds,
+    currentPace: runner.currentPace(now),
+    gpsReliable: accuracy <= 25 && !runner.interruption,
+    traceIncomplete: runner.incomplete,
+  });
+  if (!instruction && !navigation.hasPriority && advice) {
+    if (voice.speak(coachingMessage(advice, formatSpokenPace), "pace", now))
+      coach.spoken(advice, activeSeconds);
   }
   if (result === "accepted" || now - lastCheckpointAt >= 5000) checkpoint();
   renderRun();
@@ -668,7 +663,7 @@ action("start-run", () => {
   runner.start(target, route, planner.routing);
   checkpoint();
   navigation = new Navigator(route);
-  lastAdviceAt = Date.now();
+  coach.reset();
   lastSignalAdviceAt = -Infinity;
   lastRecoveryAdviceAt = -Infinity;
   map.setTrace([]);
@@ -676,7 +671,7 @@ action("start-run", () => {
   renderRoute();
   text(
     "run-message",
-    "Tempo hlásíme až po ustálení GPS. Pauza se do času nepočítá. Výpadek GPS není pauza a označí běh jako neúplný.",
+    "Tempo hlásíme po ustálení GPS. Každé dvě aktivní minuty přidáme průměr a odhad cíle. Pauza se do času nepočítá. Výpadek GPS označí záznam jako neúplný.",
   );
   voice.speak("Hledám GPS. Při běhu nech aplikaci otevřenou.");
   beginGps();
@@ -694,7 +689,7 @@ action("resume-run", () => {
   if (runner.phase === "paused") {
     runner.resume(Date.now());
     checkpoint();
-    lastAdviceAt = Date.now();
+    coach.resume(runner.elapsed(Date.now()));
     renderRun();
     beginGps();
   }
@@ -727,6 +722,7 @@ action("restore-run", () => {
   const draft = repository.draft();
   if (!draft) return;
   runner.restore(draft);
+  coach.reset(runner.elapsed(Date.now()), runner.incomplete);
   goalDistanceSource = "manual";
   checkpoint();
   planner.restoreRun(draft.route, draft.routing);
