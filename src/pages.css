@@ -76,8 +76,8 @@ main {
   color: var(--ink);
 }
 .start-orb {
-  background: var(--accent);
-  color: #17202b;
+  background: var(--accent-fill);
+  color: var(--accent-contrast);
   width: 52px;
   height: 52px;
   border-radius: 17px;
@@ -85,9 +85,6 @@ main {
   place-items: center;
   margin-top: -22px;
   box-shadow: 0 0 0 6px var(--surface);
-}
-:root:not([data-theme="dark"]) .start-orb {
-  color: white;
 }
 .start-orb .icon {
   width: 28px;

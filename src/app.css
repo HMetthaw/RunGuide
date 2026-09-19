@@ -5,8 +5,11 @@
   --paper: #f1f5f8;
   --surface: #ffffff;
   --line: #dce4eb;
-  --accent: #df4d27;
-  --accent-soft: #fff0ea;
+  --accent: #82611a;
+  --accent-fill: #d8b66a;
+  --accent-hover: #c7a354;
+  --accent-contrast: #17202b;
+  --accent-soft: #f6efde;
   --teal: #27665f;
   --inverse: #172c45;
   --hover: #f5f8fa;
@@ -16,7 +19,7 @@
   --map-base: #dde7df;
   --ruler: #bdccd8;
   --error: #ac3220;
-  --notice-line: #e9b19f;
+  --notice-line: #c8b27e;
   --display: "Barlow Condensed", Impact, sans-serif;
   --sans: "Manrope", Arial, sans-serif;
   --mono: "DM Mono", monospace;
@@ -27,8 +30,10 @@
   --paper: #0b121a;
   --surface: #101922;
   --line: #2b3a49;
-  --accent: #ff956f;
-  --accent-soft: #34251f;
+  --accent: #d1b16b;
+  --accent-fill: #d1b16b;
+  --accent-hover: #e1c68d;
+  --accent-soft: #2c281d;
   --teal: #80cbb3;
   --inverse: #16273a;
   --hover: #1f3041;
@@ -38,7 +43,7 @@
   --map-base: #172129;
   --ruler: #42556a;
   --error: #ffab93;
-  --notice-line: #795041;
+  --notice-line: #75643c;
 }
 .header-actions {
   display: flex;
@@ -78,13 +83,6 @@
 }
 [data-theme="dark"] .history-item svg polyline {
   stroke: var(--teal);
-}
-[data-theme="dark"] .button.primary {
-  color: #17202b;
-}
-[data-theme="dark"] .button.primary:hover:not(:disabled) {
-  background: #ffae90;
-  border-color: #ffae90;
 }
 * {
   box-sizing: border-box;
@@ -850,13 +848,13 @@ body.map-expanded {
   padding: 13px 19px;
 }
 .button.primary {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
+  background: var(--accent-fill);
+  color: var(--accent-contrast);
+  border-color: var(--accent-fill);
 }
 .button.primary:hover:not(:disabled) {
-  background: #bd3918;
-  border-color: #bd3918;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 .button.primary:disabled {
   background: #6d7b8c;
@@ -905,7 +903,7 @@ body.map-expanded {
   gap: 8px;
 }
 .run-state .status-dot {
-  background: #fba688;
+  background: var(--accent-fill);
 }
 .run-state h2 {
   font: 800 clamp(43px, 4.6vw, 62px)/0.97 var(--display);
@@ -996,9 +994,10 @@ body.map-expanded {
   transition: transform 0.2s;
 }
 .switch-label input:checked + .switch-track {
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 .switch-label input:checked + .switch-track::before {
+  background: var(--accent-contrast);
   transform: translateX(14px);
 }
 .switch-label input:focus-visible + .switch-track {
@@ -1132,7 +1131,7 @@ body[data-run-phase="running"] .run-state .status-dot {
   animation: pulse 2s ease-in-out infinite;
 }
 body[data-run-phase="acquiring"] .gps-status {
-  color: #ffc4ae;
+  color: #e1c68d;
 }
 .history {
   padding: 44px 0 30px;

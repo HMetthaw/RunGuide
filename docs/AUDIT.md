@@ -73,3 +73,9 @@
 - Prošlo 58 testů, TypeScript strict, ESLint a produkční build. Nové testy ověřují hranice období, oddělení profilů, navigaci a zachování GPS při přepnutí do menu. Skutečný prohlížeč: mobil 320/390 px, desktop 1440 px, světlý/tmavý režim a přenos pěší trasy 1,07 km do nastavení cíle.
 
 - Nasazeno na Cloudflare jako verze 932e4ddd-1954-48e6-bb95-ecd598d9ea35.
+
+## Zlaté akcenty · 19. 9. 2026
+
+- Oranžové akcenty nahrazeny tlumenou zlatou ve světlém i tmavém režimu, včetně trasy na mapě. Výplně tlačítek mají samostatnou barvu a tmavý text; kontrast hlavních tlačítek je nejméně 7,99 : 1, zlatého textu na světlém pozadí 5,21 : 1.
+- Ověřen mobilní náhled v obou režimech, TypeScript, ESLint, všech 58 testů a produkční build.
+

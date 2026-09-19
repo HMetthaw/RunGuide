@@ -27,11 +27,11 @@ export class RouteMap {
   setRoute(points: Point[], fit = false, waypoints: Point[] = points) {
     this.route.clearLayers();
     if (points.length > 1)
-      L.polyline(points, { color: "#df4d27", weight: 5 }).addTo(this.route);
+      L.polyline(points, { color: "#b99041", weight: 5 }).addTo(this.route);
     waypoints.forEach((p, i) =>
       L.circleMarker(p, {
         radius: i === 0 ? 7 : 4,
-        color: i === 0 ? "#172c45" : "#df4d27",
+        color: i === 0 ? "#172c45" : "#b99041",
         weight: 3,
         fillColor: "#ffffff",
         fillOpacity: 1,
