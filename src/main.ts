@@ -5,6 +5,7 @@ import { distance } from "./domain/geo";
 import {
   formatDistance,
   formatPace,
+  formatSpokenPace,
   formatTime,
   paceAdvice,
   remainingTime,
@@ -487,7 +488,7 @@ function beginGps() {
           };
           if (
             voice.speak(
-              `${messages[advice]} Aktuální tempo ${formatPace(pace)} na kilometr.`,
+              `${messages[advice]} Aktuální tempo ${formatSpokenPace(pace)}.`,
               "pace",
               now,
             )

@@ -6,6 +6,23 @@ export function formatPace(seconds: number | null): string {
   const rounded = Math.round(seconds);
   return `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, "0")}`;
 }
+export function formatSpokenPace(seconds: number | null): string {
+  if (seconds === null || !Number.isFinite(seconds) || seconds <= 0)
+    return "není k dispozici";
+  // Round before splitting so 8:59.5 becomes 9 minutes, never 60 seconds.
+  const rounded = Math.round(seconds);
+  const minutes = Math.floor(rounded / 60);
+  const remainder = rounded % 60;
+  const minuteUnit =
+    minutes === 1 ? "minuta" : minutes >= 2 && minutes <= 4 ? "minuty" : "minut";
+  const secondUnit =
+    remainder === 1
+      ? "sekunda"
+      : remainder >= 2 && remainder <= 4
+        ? "sekundy"
+        : "sekund";
+  return `${minutes} ${minuteUnit} ${remainder} ${secondUnit} na kilometr`;
+}
 export function formatTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return s >= 3600
