@@ -3,6 +3,7 @@ export class VoiceGuide {
   selectedVoiceURI = "";
   private lastNavigationAt = -Infinity;
   private lastSpokenAt = -Infinity;
+  private generation = 0;
   constructor(private onText: (text: string) => void) {}
   get available() {
     return "speechSynthesis" in window;
@@ -25,11 +26,14 @@ export class VoiceGuide {
       (now - this.lastNavigationAt < 20000 || now - this.lastSpokenAt < 10000)
     )
       return false;
+    const canPlay = (this.enabled || kind === "test") && this.available;
+    if (kind === "pace" && canPlay && window.speechSynthesis.speaking)
+      return false;
     onText(text);
     if (kind === "navigation") this.lastNavigationAt = now;
-    if ((!this.enabled && kind !== "test") || !this.available) return true;
+    if (!canPlay) return true;
     const synth = window.speechSynthesis;
-    if (kind === "pace" && synth.speaking) return false;
+    const generation = ++this.generation;
     if (kind !== "pace") synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "cs-CZ";
@@ -40,12 +44,20 @@ export class VoiceGuide {
       voices.find((voice) => voice.default) ??
       voices[0];
     if (czech) utterance.voice = czech;
-    utterance.onerror = () => onText(`${text} (Zvuk se nepodařilo přehrát.)`);
+    utterance.onerror = (event) => {
+      if (
+        generation === this.generation &&
+        event?.error !== "canceled" &&
+        event?.error !== "interrupted"
+      )
+        onText(`${text} (Zvuk se nepodařilo přehrát.)`);
+    };
     synth.speak(utterance);
     this.lastSpokenAt = now;
     return true;
   }
   cancel() {
+    this.generation++;
     if (this.available) window.speechSynthesis.cancel();
   }
 }

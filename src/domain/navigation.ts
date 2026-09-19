@@ -1,90 +1,248 @@
-import type { Fix, Point } from "../types/models";
-import { distance, segmentDistance, turnAt } from "./geo";
+import { fixSchema, type Fix, type Point } from "../types/models";
+import type { NavigationTurn, RouteMatch } from "../types/navigation";
+import {
+  bearing,
+  distance,
+  projectOnSegment,
+  segmentDistance,
+  turnAt,
+} from "./geo";
+
+const PREVIEW_METERS = 65;
+const TURN_METERS = 15;
+const INSTRUCTION_INTERVAL_MS = 4000;
+const OFF_ROUTE_METERS = 35;
+const RETURN_METERS = 15;
+const CONFIRM_MS = 4000;
+const OFF_ROUTE_REPEAT_MS = 60000;
+const MAX_FIX_AGE_MS = 10000;
+
+// Geometry has many vertices that merely describe a road. Remove small wiggles
+// before deriving turns, retaining original indices for checkpoints and distance.
+function routeTurns(route: Point[], cumulative: number[]): NavigationTurn[] {
+  if (route.length < 3) return [];
+  const keep = new Set([0, route.length - 1]);
+  const pending: [number, number][] = [[0, route.length - 1]];
+  while (pending.length) {
+    const [start, end] = pending.pop()!;
+    let furthest = -1;
+    let deviation = 5;
+    for (let i = start + 1; i < end; i++) {
+      const meters = segmentDistance(route[i], route[start], route[end]);
+      if (meters > deviation) {
+        deviation = meters;
+        furthest = i;
+      }
+    }
+    if (furthest !== -1) {
+      keep.add(furthest);
+      pending.push([start, furthest], [furthest, end]);
+    }
+  }
+  const indices = [...keep].sort((a, b) => a - b);
+  const turns: NavigationTurn[] = [];
+  let previousAngle = 0;
+  for (let i = 1; i < indices.length - 1; i++) {
+    const index = indices[i];
+    if (
+      distance(route[indices[i - 1]], route[index]) < 8 ||
+      distance(route[index], route[indices[i + 1]]) < 8
+    )
+      continue;
+    const direction = turnAt(
+      route[indices[i - 1]],
+      route[index],
+      route[indices[i + 1]],
+    );
+    if (direction === "straight") continue;
+    const angle = Math.abs(
+      ((bearing(route[index], route[indices[i + 1]]) -
+        bearing(route[indices[i - 1]], route[index]) +
+        540) %
+        360) -
+        180,
+    );
+    const previous = turns.at(-1);
+    // A rounded corner can have several same-direction geometry bends.
+    if (
+      previous?.direction === direction &&
+      angle < 60 &&
+      previousAngle < 60 &&
+      cumulative[index] - cumulative[previous.index] < 30
+    )
+      continue;
+    turns.push({ index, direction });
+    previousAngle = angle;
+  }
+  return turns;
+}
+
 export class Navigator {
   next = 0;
-  private announced = new Set<number>();
-  private lastOffRouteAt = 0;
+  hasPriority = false;
+  private announced = new Map<number, "preview" | "turn">();
+  private lastOffRouteAt = -Infinity;
   private lastInstructionAt = -Infinity;
+  private lastTimestamp = -Infinity;
+  private matchedAt: number | null = null;
+  private offRouteSince: number | null = null;
+  private returningSince: number | null = null;
+  private offRoute = false;
+  private progress = 0;
   private cumulative: number[] = [0];
+  private turns: NavigationTurn[];
+
   constructor(private route: Point[]) {
     for (let i = 1; i < route.length; i++)
       this.cumulative[i] =
         this.cumulative[i - 1] + distance(route[i - 1], route[i]);
+    this.turns = routeTurns(route, this.cumulative);
   }
+
+  // Rejected fixes, permission loss and pauses break consecutive GPS evidence.
+  resetConfidence() {
+    this.offRouteSince = null;
+    this.returningSince = null;
+  }
+
+  private match(fix: Fix): RouteMatch | null {
+    const candidates: RouteMatch[] = [];
+    const start = Math.max(0, this.next - 1);
+    const from = Math.max(this.progress, this.cumulative[start]);
+    const lookAhead = Math.max(
+      300,
+      ((fix.timestamp - (this.matchedAt ?? fix.timestamp)) / 1000) * 9,
+    );
+    // Search upcoming segments. After signal loss or a detour, allow the same
+    // maximum running speed as Runner so a distant return cannot strand progress.
+    for (let i = start; i < this.route.length - 1; i++) {
+      if (this.cumulative[i] > from + lookAhead) break;
+      const projection = projectOnSegment(
+        fix,
+        this.route[i],
+        this.route[i + 1],
+      );
+      const meters =
+        this.cumulative[i] +
+        projection.fraction * (this.cumulative[i + 1] - this.cumulative[i]);
+      candidates.push({
+        segment: i,
+        meters,
+        deviation: distance(fix, projection.point),
+      });
+    }
+    if (!candidates.length) return null;
+    const closest = Math.min(
+      ...candidates.map((candidate) => candidate.deviation),
+    );
+    // Prefer the first plausible segment at crossings or overlapping out/back
+    // legs. Small GPS noise must not select a much later traversal of that road.
+    return candidates.find(
+      (candidate) => candidate.deviation <= closest + Math.min(fix.accuracy, 8),
+    )!;
+  }
+
+  private turnInstruction(meters: number, now: number): string | null {
+    const turn = this.turns.find(
+      (candidate) =>
+        candidate.index >= this.next &&
+        this.cumulative[candidate.index] >= meters - 3,
+    );
+    if (!turn) return null;
+    const remaining = Math.max(0, this.cumulative[turn.index] - meters);
+    if (remaining > PREVIEW_METERS) return null;
+    this.hasPriority = true;
+    const stage = remaining <= TURN_METERS ? "turn" : "preview";
+    const previous = this.announced.get(turn.index);
+    if (
+      previous === "turn" ||
+      previous === stage ||
+      now - this.lastInstructionAt < INSTRUCTION_INTERVAL_MS ||
+      (previous === "preview" && now - this.lastInstructionAt < 8000)
+    )
+      return null;
+    this.announced.set(turn.index, stage);
+    this.lastInstructionAt = now;
+    const direction = { left: "doleva", right: "doprava", back: "zpět" };
+    const instruction =
+      turn.direction === "back"
+        ? "Otočte se zpět"
+        : `Odbočte ${direction[turn.direction]}`;
+    return stage === "turn"
+      ? `${instruction}.`
+      : `${instruction} za přibližně ${Math.round(remaining / 10) * 10} metrů.`;
+  }
+
   update(fix: Fix, now: number): string | null {
     if (
+      !fixSchema.safeParse(fix).success ||
       fix.accuracy > 25 ||
-      !this.route.length ||
-      this.next >= this.route.length
-    )
+      now - fix.timestamp > MAX_FIX_AGE_MS ||
+      fix.timestamp > now + 2000 ||
+      fix.timestamp <= this.lastTimestamp
+    ) {
+      this.resetConfidence();
       return null;
-    const radius = Math.max(12, Math.min(25, fix.accuracy));
-    // If GPS missed a waypoint, arriving at a nearby following waypoint must recover progress.
-    // Never jump to a later point that overlaps the already-visited part of a loop.
-    if (this.next > 0 && distance(fix, this.route[this.next]) >= radius) {
-      const candidates = this.route
-        .map((point, index) => ({ point, index, meters: distance(fix, point) }))
-        .filter(
-          (candidate) =>
-            candidate.index > this.next &&
-            this.cumulative[candidate.index] - this.cumulative[this.next] <=
-              300 &&
-            candidate.meters < radius,
-        )
-        .filter(
-          (candidate) =>
-            !this.route
-              .slice(0, this.next)
-              .some(
-                (visited) => distance(visited, candidate.point) < radius * 2,
-              ),
-        )
-        .sort((a, b) => a.meters - b.meters);
-      if (candidates[0]) this.next = candidates[0].index;
     }
-    // Progress only forward. Do not mistake an overlapping finish for the start.
+    if (fix.timestamp - this.lastTimestamp > MAX_FIX_AGE_MS)
+      this.resetConfidence();
+    this.lastTimestamp = fix.timestamp;
+    this.matchedAt ??= fix.timestamp;
+    this.hasPriority = false;
+    if (this.route.length < 2 || this.next >= this.route.length) return null;
+    const match = this.match(fix);
+    if (!match) return null;
+    const onRoute = match.deviation <= Math.max(RETURN_METERS, fix.accuracy);
+    const outside = match.deviation - fix.accuracy > OFF_ROUTE_METERS;
+    if (outside) {
+      this.hasPriority = true;
+      this.returningSince = null;
+      this.offRouteSince ??= fix.timestamp;
+      if (
+        fix.timestamp - this.offRouteSince >= CONFIRM_MS &&
+        now - this.lastOffRouteAt >= OFF_ROUTE_REPEAT_MS
+      ) {
+        this.offRoute = true;
+        this.lastOffRouteAt = now;
+        return "Opustili jste trasu.";
+      }
+      return null;
+    }
+    this.offRouteSince = null;
+    if (!onRoute) {
+      this.hasPriority = true;
+      this.returningSince = null;
+      return null;
+    }
+    let returned = false;
+    if (this.offRoute) {
+      this.hasPriority = true;
+      this.returningSince ??= fix.timestamp;
+      if (fix.timestamp - this.returningSince < CONFIRM_MS) return null;
+      this.offRoute = false;
+      this.returningSince = null;
+      this.lastOffRouteAt = -Infinity;
+      returned = true;
+    }
+    // Evaluate the turn before consuming a nearby point; otherwise the first
+    // accurate fix just before a junction can silently skip its instruction.
+    const instruction = this.turnInstruction(match.meters, now);
+    this.matchedAt = fix.timestamp;
+    this.progress = Math.max(this.progress, match.meters);
+    this.next = Math.max(this.next, match.segment + 1);
+    const arrivalRadius = 8;
     while (
       this.next < this.route.length &&
-      distance(fix, this.route[this.next]) < radius
+      this.cumulative[this.next] <= this.progress + arrivalRadius &&
+      distance(fix, this.route[this.next]) <= arrivalRadius
     )
       this.next++;
-    if (this.next === this.route.length)
-      return "Dorazil jsi k poslednímu bodu trasy.";
-    const target = this.route[this.next],
-      meters = distance(fix, target);
-    if (this.next === 0) return null;
-    const deviation = segmentDistance(fix, this.route[this.next - 1], target);
-    if (deviation > 80 && now - this.lastOffRouteAt > 60000) {
-      this.lastOffRouteAt = now;
-      return "Jsi mimo plánovanou linii. Až bude bezpečné zastavit, zkontroluj trasu.";
+    if (this.next === this.route.length) {
+      this.hasPriority = true;
+      return "Dorazili jste k poslednímu bodu trasy.";
     }
-    if (deviation > 80 || meters > 70 || now - this.lastInstructionAt < 12000)
-      return null;
-    // Geometry vertices describe bends, not necessarily intersections. Look ahead
-    // along the path and stay quiet on straight sections of a dense routed line.
-    let instruction = this.next;
-    while (
-      instruction < this.route.length - 1 &&
-      turnAt(
-        this.route[instruction - 1],
-        this.route[instruction],
-        this.route[instruction + 1],
-      ) === "straight"
-    )
-      instruction++;
-    const remaining =
-      meters + this.cumulative[instruction] - this.cumulative[this.next];
-    if (remaining > 70 || this.announced.has(instruction)) return null;
-    this.announced.add(instruction);
-    this.lastInstructionAt = now;
-    if (instruction === this.route.length - 1)
-      return `Poslední bod trasy je asi ${Math.round(remaining / 10) * 10} metrů před tebou.`;
-    const directions = {
-      left: "doleva",
-      right: "doprava",
-      straight: "rovně",
-      back: "zpátky",
-    };
-    return `Za přibližně ${Math.round(remaining / 10) * 10} metrů pokračuje plánovaná trasa ${directions[turnAt(this.route[instruction - 1], this.route[instruction], this.route[instruction + 1])]}.`;
+    if (returned)
+      return `Jste zpět na trase.${instruction ? ` ${instruction}` : ""}`;
+    return instruction;
   }
 }

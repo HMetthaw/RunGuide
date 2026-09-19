@@ -152,11 +152,13 @@ describe("pace and route guidance", () => {
       c = { ...b, lng: b.lng + 0.002 };
     const nav = new Navigator([a, b, c, a]);
     nav.update(a, epoch);
-    nav.update(a, epoch + 1000);
+    nav.update({ ...a, timestamp: epoch + 1000 }, epoch + 1000);
     expect(nav.next).toBe(1);
-    nav.update(c, epoch + 30000);
+    nav.update({ ...c, timestamp: epoch + 30000 }, epoch + 30000);
     expect(nav.next).toBe(3);
-    expect(nav.update(a, epoch + 60000)).toContain("poslednímu");
+    expect(
+      nav.update({ ...a, timestamp: epoch + 60000 }, epoch + 60000),
+    ).toContain("poslednímu");
   });
   it("rounds pace without producing 5:60", () => {
     expect(formatPace(359.9)).toBe("6:00");

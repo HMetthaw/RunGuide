@@ -407,6 +407,7 @@ async function lockScreen() {
   }
 }
 function stopGps() {
+  navigation.resetConfidence();
   gpsGeneration++;
   if (watch !== null) navigator.geolocation.clearWatch(watch);
   watch = null;
@@ -415,6 +416,7 @@ function stopGps() {
   text("wake-status", "");
 }
 function gpsError(code: number) {
+  navigation.resetConfidence();
   text(
     "gps-status",
     code === 1
@@ -455,6 +457,7 @@ function beginGps() {
         const result = runner.ingest(fix, now);
         if (result === "ignored") return;
         if (result === "weak" || result === "jump" || result === "stale") {
+          navigation.resetConfidence();
           text(
             "gps-status",
             result === "weak"
@@ -485,7 +488,7 @@ function beginGps() {
             now,
             lastAdviceAt,
           );
-        if (!instruction && advice) {
+        if (!instruction && !navigation.hasPriority && advice) {
           const messages = {
             fast: "Běžíš rychleji než svůj cíl. Zkus trochu zpomalit.",
             slow: "Běžíš pomaleji než svůj cíl. Jestli se cítíš dobře, lehce přidej.",

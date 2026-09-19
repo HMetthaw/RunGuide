@@ -1,4 +1,5 @@
 import type { Point, TracePoint } from "../types/models";
+import type { SegmentProjection } from "../types/navigation";
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
 export function distance(a: Point, b: Point): number {
   const h =
@@ -31,8 +32,12 @@ export function turnAt(
   if (Math.abs(angle) > 150) return "back";
   return angle > 30 ? "right" : angle < -30 ? "left" : "straight";
 }
-// A local projection is sufficient for finding proximity to short manually drawn segments.
-export function segmentDistance(point: Point, a: Point, b: Point): number {
+// Project onto the path, so sparse GPS samples need not hit individual vertices.
+export function projectOnSegment(
+  point: Point,
+  a: Point,
+  b: Point,
+): SegmentProjection {
   const scale = Math.cos(radians(point.lat));
   const x = (b.lng - a.lng) * scale,
     y = b.lat - a.lat;
@@ -42,10 +47,13 @@ export function segmentDistance(point: Point, a: Point, b: Point): number {
     x * x + y * y
       ? Math.max(0, Math.min(1, (px * x + py * y) / (x * x + y * y)))
       : 0;
-  return distance(point, {
-    lat: a.lat + t * y,
-    lng: a.lng + t * (b.lng - a.lng),
-  });
+  return {
+    point: { lat: a.lat + t * y, lng: a.lng + t * (b.lng - a.lng) },
+    fraction: t,
+  };
+}
+export function segmentDistance(point: Point, a: Point, b: Point): number {
+  return distance(point, projectOnSegment(point, a, b).point);
 }
 export function simplifyTrace(
   trace: TracePoint[],
