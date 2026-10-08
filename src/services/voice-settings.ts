@@ -58,7 +58,7 @@ export function setupVoiceSettings(voice: VoiceGuide, storage: StoragePort) {
   }
   function test() {
     voice.speak(
-      "Ahoj, tady RunGuide. Držíš cílové tempo. Za padesát metrů pokračuj doprava.",
+      "Ahoj, tady RunGuide. Aktuální tempo šest minut na kilometr. Odbočte doprava.",
       "test",
       Date.now(),
       (message) => {

@@ -578,6 +578,13 @@
                 </svg>
               </button>
               <button
+                id="start-free-run"
+                class="button secondary"
+                type="button"
+              >
+                Volně vyběhnout bez cíle
+              </button>
+              <button
                 id="pause-run"
                 class="button secondary"
                 type="button"
@@ -641,12 +648,18 @@
               <span>Čas bez pauz</span><strong id="live-time">0:00</strong>
             </div>
             <div class="metric minor">
-              <span>Průměrné tempo</span><strong id="average-pace">—</strong>
+              <span>Nadmořská výška</span><strong id="live-elevation">—</strong>
             </div>
             <div class="metric minor">
+              <span>Nastoupáno</span><strong id="live-elevation-gain">—</strong>
+            </div>
+            <div class="metric minor">
+              <span>Průměrné tempo</span><strong id="average-pace">—</strong>
+            </div>
+            <div class="metric minor" id="goal-delta-metric">
               <span>Odchylka od cíle</span><strong id="live-delta">—</strong>
             </div>
-            <div class="metric remaining">
+            <div class="metric remaining" id="goal-remaining-metric">
               <span>Zbývá do cíle</span
               ><strong id="remaining-distance">5,00 km</strong>
               <p id="remaining-time"></p>
@@ -825,6 +838,75 @@
               </div>
               <p id="voice-support" class="status" role="status"></p>
               <p id="voice-preview-status" class="status" role="status"></p>
+              <div class="pace-settings">
+                <h3>Hlášení tempa</h3>
+                <p>
+                  Obě tempa můžeš zapnout současně. Intervaly počítáme z času
+                  běhu bez pauz.
+                </p>
+                <fieldset class="pace-channel">
+                  <legend>Aktuální tempo</legend>
+                  <p>Vyhlazené tempo za posledních 45 sekund.</p>
+                  <label class="switch-label">
+                    <input id="pace-current-enabled" type="checkbox" checked />
+                    <span class="switch-track" aria-hidden="true"></span>
+                    Hlásit aktuální tempo
+                  </label>
+                  <label class="pace-interval" for="pace-current-interval">
+                    Každých
+                    <input
+                      id="pace-current-interval"
+                      type="number"
+                      min="15"
+                      max="3600"
+                      step="1"
+                      value="120"
+                      inputmode="numeric"
+                      aria-describedby="pace-current-error"
+                    />
+                    sekund
+                  </label>
+                  <p
+                    id="pace-current-error"
+                    class="status error"
+                    role="status"
+                  ></p>
+                </fieldset>
+                <fieldset class="pace-channel">
+                  <legend>Průměrné tempo za celý běh</legend>
+                  <p>Celkový čas bez pauz dělený uběhnutou vzdáleností.</p>
+                  <label class="switch-label">
+                    <input id="pace-average-enabled" type="checkbox" />
+                    <span class="switch-track" aria-hidden="true"></span>
+                    Hlásit průměrné tempo
+                  </label>
+                  <label class="pace-interval" for="pace-average-interval">
+                    Každých
+                    <input
+                      id="pace-average-interval"
+                      type="number"
+                      min="15"
+                      max="3600"
+                      step="1"
+                      value="120"
+                      inputmode="numeric"
+                      aria-describedby="pace-average-error"
+                      disabled
+                    />
+                    sekund
+                  </label>
+                  <p
+                    id="pace-average-error"
+                    class="status error"
+                    role="status"
+                  ></p>
+                </fieldset>
+                <p class="status">
+                  15 až 3 600 sekund. Při souběhu zazní obě tempa v jedné
+                  zprávě. Pokyny k odbočení mají přednost.
+                </p>
+                <p id="pace-settings-status" class="status" role="status"></p>
+              </div>
             </section>
           </div>
           <div class="settings-card data-settings">

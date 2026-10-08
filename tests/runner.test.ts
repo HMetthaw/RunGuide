@@ -52,6 +52,46 @@ describe("GPS run lifecycle", () => {
     expect(run.plannedRoute[0].lat).toBe(50);
     expect(run.durationSeconds).toBe(60);
   });
+  it("tracks reliable ascent without GPS noise or jumps across a pause", () => {
+    const runner = running();
+    const elevated = (
+      seconds: number,
+      altitude: number,
+      altitudeAccuracy = 5,
+      meters = seconds * 3,
+    ) => {
+      const point = { ...fix(seconds, meters), altitude, altitudeAccuracy };
+      runner.ingest(point, point.timestamp);
+    };
+    elevated(0, 100);
+    elevated(5, 101);
+    elevated(10, 102);
+    elevated(15, 104);
+    elevated(20, 103);
+    elevated(25, 99);
+    elevated(30, 105);
+    elevated(35, 150, 50);
+    expect(runner.elevationGainMeters).toBe(10);
+    expect(runner.currentElevation(epoch + 35000)).toBeNull();
+    elevated(40, 150);
+    expect(runner.elevationGainMeters).toBe(10);
+    expect(runner.currentElevation(epoch + 40000)).toBeNull();
+    runner.pause(epoch + 40000);
+    expect(runner.currentElevation(epoch + 40000)).toBeNull();
+    const restored = new Runner();
+    restored.restore(runner.checkpoint(epoch + 40000));
+    expect(restored.elevationGainMeters).toBe(10);
+    restored.resume(epoch + 100000);
+    const resumed = { ...fix(100, 1000), altitude: 200, altitudeAccuracy: 5 };
+    restored.ingest(resumed, resumed.timestamp);
+    const next = { ...fix(105, 1015), altitude: 204, altitudeAccuracy: 5 };
+    restored.ingest(next, next.timestamp);
+    expect(restored.elevationGainMeters).toBe(14);
+    expect(restored.currentElevation(epoch + 105000)).toBe(204);
+    const run = restored.finish(epoch + 105000)!;
+    expect(run.elevationGainMeters).toBe(14);
+    expect(run.trace.at(-1)?.altitude).toBe(204);
+  });
   it("does not accumulate stationary jitter", () => {
     const runner = running();
     for (let i = 0; i <= 120; i++) feed(runner, i, (i % 3) - 1, 10);
@@ -217,14 +257,16 @@ describe("GPS run lifecycle", () => {
 });
 
 describe("pace and route guidance", () => {
-  it("advances through dense road geometry after missed GPS samples and announces the coming turn once", () => {
+  it("advances through dense road geometry after missed GPS samples and announces at the junction once", () => {
     const points = Array.from({ length: 101 }, (_, i) => fix(0, i));
     points.push({ ...points[100], lng: points[100].lng + 0.002 });
     const nav = new Navigator(points);
     expect(nav.update(fix(0, 0), epoch)).toBeNull();
-    expect(nav.update(fix(20, 50), epoch + 20000)).toContain("doprava");
+    expect(nav.update(fix(20, 50), epoch + 20000)).toBeNull();
     expect(nav.next).toBeGreaterThan(50);
     expect(nav.update(fix(21, 55), epoch + 21000)).toBeNull();
+    expect(nav.update(fix(30, 90), epoch + 30000)).toBe("Odbočte doprava.");
+    expect(nav.update(fix(31, 93), epoch + 31000)).toBeNull();
   });
   it("does not jump to the return leg of a dense out-and-back route", () => {
     const outward = Array.from({ length: 101 }, (_, i) => fix(0, i * 2));
@@ -273,9 +315,10 @@ describe("pace and route guidance", () => {
     const nav = new Navigator([a, b, c, a]);
     nav.update(a, epoch);
     expect(nav.next).toBe(1);
-    expect(nav.update(fix(20, 45), epoch + 20000)).toContain("doprava");
+    expect(nav.update(fix(20, 45), epoch + 20000)).toBeNull();
     expect(nav.update(fix(21, 48), epoch + 21000)).toBeNull();
     expect(nav.next).toBe(1);
     expect(distance(a, b)).toBeCloseTo(100, 0);
+    expect(nav.update(fix(30, 90), epoch + 30000)).toBe("Odbočte doprava.");
   });
 });

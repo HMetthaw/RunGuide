@@ -34,15 +34,13 @@ describe("spoken turn decisions", () => {
     [200, "doprava"],
     [-200, "doleva"],
   ])(
-    "announces a turn before it and reminds once at the junction (%s)",
+    "announces only once at the junction without a distance preview (%s)",
     (east, direction) => {
       const nav = new Navigator([point(0, 0), point(0, 100), point(east, 100)]);
       expect(update(nav, 0, 0, 0)).toBeNull();
-      expect(update(nav, 15, 0, 40)).toBe(
-        `Odbočte ${direction} za přibližně 60 metrů.`,
-      );
+      expect(update(nav, 15, 0, 40)).toBeNull();
       for (let t = 16; t < 25; t++) expect(update(nav, t, 0, 45)).toBeNull();
-      expect(nav.hasPriority).toBe(true);
+      expect(nav.hasPriority).toBe(false);
       expect(update(nav, 30, 0, 90)).toBe(`Odbočte ${direction}.`);
       for (let t = 31; t < 45; t++) expect(update(nav, t, 0, 90)).toBeNull();
       expect(update(nav, 46, Math.sign(east) * 30, 100)).toBeNull();
@@ -53,7 +51,7 @@ describe("spoken turn decisions", () => {
 
   it("joins the first segment even when initial GPS misses the start point", () => {
     const nav = rightTurn();
-    expect(update(nav, 0, 0, 50)).toContain("Odbočte doprava");
+    expect(update(nav, 0, 0, 50)).toBeNull();
     expect(nav.next).toBe(1);
   });
 
@@ -76,7 +74,8 @@ describe("spoken turn decisions", () => {
   it("supports long sparse segments without requiring arrival at the next vertex", () => {
     const nav = new Navigator([point(0, 0), point(0, 1000), point(200, 1000)]);
     update(nav, 0, 0, 0);
-    expect(update(nav, 300, 0, 950)).toContain("Odbočte doprava");
+    expect(update(nav, 300, 0, 950)).toBeNull();
+    expect(update(nav, 310, 0, 990)).toBe("Odbočte doprava.");
   });
 
   it("recovers on dense geometry beyond the normal lookahead after a long signal gap", () => {
@@ -84,7 +83,8 @@ describe("spoken turn decisions", () => {
     points.push(point(200, 1000));
     const nav = new Navigator(points);
     update(nav, 0, 0, 0);
-    expect(update(nav, 300, 0, 950)).toContain("Odbočte doprava");
+    expect(update(nav, 300, 0, 950)).toBeNull();
+    expect(update(nav, 310, 0, 990)).toBe("Odbočte doprava.");
     expect(nav.next).toBeGreaterThan(90);
   });
 
@@ -114,7 +114,9 @@ describe("spoken turn decisions", () => {
       point(20, 100),
       point(200, 100),
     ]);
-    expect(update(rounded, 0, 0, 40)).toContain("Odbočte doprava");
+    expect(update(rounded, 0, 0, 40)).toBeNull();
+    expect(update(rounded, 1, 0, 70)).toBe("Odbočte doprava.");
+    expect(update(rounded, 2, 6, 94)).toBeNull();
   });
 
   it("keeps two distinct right-angle turns on a short connecting street", () => {
@@ -137,7 +139,7 @@ describe("spoken turn decisions", () => {
       if (t < 45) expect(nav.next).toBeLessThan(100);
       if (text) messages.push(text);
     }
-    expect(messages.filter((text) => text.includes("Otočte"))).toHaveLength(2);
+    expect(messages.filter((text) => text.includes("Otočte"))).toHaveLength(1);
     expect(messages.filter((text) => text.includes("poslednímu"))).toHaveLength(
       1,
     );
@@ -187,7 +189,8 @@ describe("off-route confidence and recovery", () => {
     expect(update(nav, 1, -60, 40)).toBeNull();
     expect(update(nav, 2, 0, 20)).toBeNull();
     for (let t = 3; t < 15; t++) expect(update(nav, t, -50, 40, 25)).toBeNull();
-    expect(update(nav, 15, 0, 45)).toContain("Odbočte doprava");
+    expect(update(nav, 15, 0, 45)).toBeNull();
+    expect(update(nav, 25, 0, 90)).toBe("Odbočte doprava.");
   });
 
   it("confirms return inside a tighter corridor and detects a new departure", () => {
@@ -203,16 +206,15 @@ describe("off-route confidence and recovery", () => {
     expect(update(nav, 21, -60, 40)).toBe("Opustili jste trasu.");
   });
 
-  it("withholds turns off-route and includes an upcoming turn when return is confirmed", () => {
+  it("withholds turns off-route and waits for the junction after confirmed return", () => {
     const nav = rightTurn();
     update(nav, 0, 0, 0);
     update(nav, 1, -60, 50);
     expect(update(nav, 5, -60, 50)).toBe("Opustili jste trasu.");
     expect(update(nav, 6, 0, 50)).toBeNull();
-    expect(update(nav, 10, 0, 50)).toBe(
-      "Jste zpět na trase. Odbočte doprava za přibližně 50 metrů.",
-    );
+    expect(update(nav, 10, 0, 50)).toBe("Jste zpět na trase.");
     expect(update(nav, 11, 0, 50)).toBeNull();
+    expect(update(nav, 20, 0, 90)).toBe("Odbočte doprava.");
   });
 
   it("breaks confirmation across poor fixes, GPS gaps and explicit interruptions", () => {

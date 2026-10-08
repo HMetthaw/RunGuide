@@ -27,7 +27,7 @@ Běžec chce před vyběhnutím rychle vytvořit vlastní trasu, zvolit si cíl 
 3. Zaznamenat anonymní technická data: ztráty GPS, pády, odchylky trasy a četnost hlasových pokynů.
 4. Vyhodnotit pilot před rozhodnutím o veřejném vydání.
 
-## Fáze 4 — Territory & Clans (za 4 až 6 měsíců)
+## Fáze 4 — Territory & Clans a žebříčky (za 4 až 6 měsíců)
 
 Tato fáze se začne až po úspěšném ověření běžeckého jádra a pilotu. Datový základ je připraven už nyní, ale herní obrazovky ani soutěže nebudou součástí první verze.
 
@@ -35,7 +35,53 @@ Tato fáze se začne až po úspěšném ověření běžeckého jádra a pilotu
 2. Pokrýt polygon agregovanými šestiúhelníkovými buňkami a atomicky převzít pouze platné buňky.
 3. Zobrazit veřejně jen buňky, jejich vlastníka a agregované skóre; nikdy cizí syrovou trasu nebo startovní bod.
 4. Přidat klany, členství, klanové skóre a přátelské soutěže.
-5. Ověřit férovost, dopad na baterii, soukromí a odolnost proti falešné GPS před veřejným vydáním.
+5. Přidat žebříčky s přepínáním území a disciplíny podle zadání níže.
+6. Počítat výsledky na serveru do všech příslušných žebříčků nezávisle na tom, který si uživatel právě prohlíží.
+7. Ověřit férovost, dopad na baterii, soukromí a odolnost proti falešné GPS před veřejným vydáním.
+
+### Výběr území a zobrazení
+
+- Uživatel si přepne žebříček na konkrétní obec (město nebo vesnici) nebo celou zemi. Kraje a okresy mohou rozšířit stejný princip později; město a vesnice jsou alternativní typy obce, nikoli dvě povinné úrovně nad sebou.
+- Výběr území mění pouze zobrazení. Běžec může sledovat jen soutěž ve své obci, ale jeho způsobilé výsledky se současně započítávají i do příslušného celostátního žebříčku a všech dalších zavedených nadřazených území.
+- Přepnutí žebříčku nesmí měnit příslušnost výsledků, resetovat skóre ani vyžadovat samostatné přihlašování do každého území. Neznamená to započítávání do nesouvisejících obcí nebo zemí.
+- Obrazovka má samostatné volby území, disciplíny a období. Zapamatuje poslední výběr a ukáže vlastní umístění, hodnotu výsledku a prázdný stav, pokud v daném žebříčku ještě nikdo není.
+- Pro území používat stabilní identifikátory a vztah k nadřazenému území; stejnojmenné obce rozlišit podle země a regionu.
+
+### Disciplíny
+
+| Žebříček | Výsledek a pořadí |
+| --- | --- |
+| Území | Skóre z platných ověřených buněk podle pravidel teritorií, vyšší skóre je lepší. Individuální a klanový žebříček vést samostatně. |
+| Nejdelší běh | Nejdelší jednotlivý dokončený a serverem ověřený běh v kilometrech, vyšší vzdálenost je lepší. Nejde o součet více běhů. |
+| Nejrychlejší výkon na X km | Samostatné kategorie pro pevné vzdálenosti; návrh pro první vydání: 1 km, 5 km a 10 km. Řadit podle nejkratšího času na dané vzdálenosti, zobrazovat také průměrné tempo jako `m:ss / km`. |
+
+U rekordových disciplín zobrazit jeden nejlepší způsobilý výsledek každého běžce v daném území a období. Jedním během lze získat rekord v několika vzdálenostních kategoriích současně. Pro rychlost použít nejlepší souvislý úsek přesné délky X km v ověřeném záznamu, nikoli okamžité GPS tempo ani průměr celého delšího běhu. Čas úseku zahrnuje i případné pauzy; úseky s neověřitelným průběhem nebo výpadkem GPS do rekordů nezařazovat.
+
+Další možné disciplíny po ověření prvních žebříčků: celkový počet kilometrů za období a rekordy na půlmaraton či maraton. Kategorie navrhnout rozšiřitelně, aby přidání disciplíny nevyžadovalo změnu principu územních filtrů.
+
+### Výpočet, férovost a soukromí
+
+- Území se nadále získává pouze platným uzavřeným během. Výkonnostní rekordy mohou pocházet i z otevřené trasy, pokud jde o platný dokončený a ověřený běh.
+- Klient posílá soukromý záznam; ověření výkonu, přiřazení území, výpočet rekordů a změny skóre provádí pouze server. Klientské souhrny ani ručně zadané výsledky nejsou důkaz výkonu.
+- Opakovaná synchronizace stejného běhu nesmí přidat body znovu. Nadřazený žebříček nesmí tentýž výkon započítat vícekrát kvůli překryvu území nebo více dílčím výsledkům.
+- Stanovit jednotná pravidla přesnosti GPS, podezřelých skoků, pauz, časové interpolace hranic úseku, shodných výsledků a zaokrouhlení. Pořadí určovat z přesných hodnot, nikoli ze zaokrouhleného zobrazení.
+- Veřejný záznam obsahuje jen soutěžní přezdívku, pořadí, disciplínu, území, období a souhrnný výsledek. Přesnou trasu, rekordní úsek, start, konec ani soukromé údaje profilu nezveřejňovat; mapa území dál vystavuje pouze agregované buňky.
+- Vyřazení neplatného nebo smazaného běhu musí promítnout změnu do všech dotčených žebříčků, případně dosadit další nejlepší způsobilý rekord. Totéž řešit při smazání účtu podle pravidel uchování soutěžních agregací.
+
+### Rozhodnutí před implementací
+
+- Upřesnit, zda místní výkonnostní žebříček porovnává výkony uskutečněné na daném území, nebo běžce z jejich zvolené soutěžní obce. Pro teritoriální skóre navrhovat příslušnost podle polohy buněk. Výběr prohlíženého žebříčku nikdy nepoužívat jako určení soutěžní příslušnosti.
+- Podle této volby určit pravidla pro běhy přes hranice obcí či zemí, buňky na hranicích a změny soutěžní obce; nezjišťovat ani nezveřejňovat domovskou adresu z GPS.
+- Potvrdit období: návrh týden, měsíc a celkově; upřesnit časová pásma, hranice období a zda se u teritorií porovnává aktuálně držená plocha, nebo body získané v sezoně.
+- Potvrdit veřejnou soutěžní identitu a možnost nezveřejňovat vlastní výsledky. Automatické započítání do příslušných žebříčků musí respektovat nastavenou účast v soutěžích.
+
+### Ověření fáze 4
+
+- Otestovat současné zařazení výsledku do obecního a celostátního žebříčku a to, že přepínání zobrazení nemění skóre.
+- Otestovat nejdelší jednotlivý běh, rekord na přesné vzdálenosti uvnitř delšího běhu, pauzy, chyby GPS, shodné výsledky, opakovanou synchronizaci a přepočet po vyřazení či smazání výsledku.
+- Otestovat hranice území a období, stejnojmenné obce a oddělení individuálních a klanových výsledků.
+- Ověřit, že veřejné odpovědi neobsahují cizí trasu ani údaje soukromého profilu a klient nemůže zapisovat soutěžní výsledky přímo.
+- Před zpřístupněním spustit TypeScript kontrolu, linter a relevantní testy; na telefonu ověřit přepínání žebříčků a srozumitelnost vlastního umístění.
 
 ## Kritéria pro rozhodnutí o vydání
 

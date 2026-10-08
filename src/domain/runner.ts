@@ -7,6 +7,7 @@ import {
   type Run,
   type Routing,
   type RunPhase,
+  type RunMode,
   type TracePoint,
 } from "../types/models";
 import { distance, simplifyTrace } from "./geo";
@@ -21,10 +22,13 @@ export const GPS_GAP_MS = 15000;
 export class Runner {
   phase: RunPhase = "idle";
   goal: Goal = { distanceKm: 5, durationMinutes: 30 };
+  mode: RunMode = "goal";
   route: Point[] = [];
   routing: Routing | undefined;
   trace: TracePoint[] = [];
   meters = 0;
+  elevationGainMeters = 0;
+  hasElevation = false;
   rejectedFixes = 0;
   gaps = 0;
   recoveryUncertain = false;
@@ -34,6 +38,9 @@ export class Runner {
   navigationNext = 0;
   lastFix: Fix | null = null;
   private anchor: Fix | null = null;
+  private elevationAnchor: number | null = null;
+  private elevationAt = 0;
+  private elevationFix: { altitude: number; timestamp: number } | null = null;
   private lastSeen = 0;
   private segment = 0;
   private samples: { at: number; meters: number; moving: boolean }[] = [];
@@ -42,13 +49,16 @@ export class Runner {
   private startedAt = 0;
   private id = "";
 
-  start(goal: Goal, route: Point[], routing?: Routing) {
+  start(goal: Goal, route: Point[], routing?: Routing, mode: RunMode = "goal") {
     if (!["idle", "finished"].includes(this.phase)) return;
     this.goal = goalSchema.parse(goal);
+    this.mode = mode;
     this.route = route.map((p) => ({ ...p }));
     this.routing = routing ? structuredClone(routing) : undefined;
     this.trace = [];
     this.meters = 0;
+    this.elevationGainMeters = 0;
+    this.hasElevation = false;
     this.rejectedFixes = 0;
     this.gaps = 0;
     this.recoveryUncertain = false;
@@ -58,6 +68,9 @@ export class Runner {
     this.navigationNext = 0;
     this.lastFix = null;
     this.anchor = null;
+    this.elevationAnchor = null;
+    this.elevationAt = 0;
+    this.elevationFix = null;
     this.lastSeen = 0;
     this.segment = 0;
     this.samples = [];
@@ -95,6 +108,9 @@ export class Runner {
     this.gaps++;
     this.segment++;
     this.anchor = null;
+    this.elevationAnchor = null;
+    this.elevationAt = 0;
+    this.elevationFix = null;
     this.samples = [];
     return true;
   }
@@ -113,6 +129,53 @@ export class Runner {
     if (!this.interruption) return;
     this.untrackedMs += Math.max(0, now - this.interruption.since);
     this.interruption = null;
+  }
+  currentElevation(now: number): number | null {
+    const fix = this.elevationFix;
+    return this.phase === "running" &&
+      !this.interruption &&
+      fix &&
+      now - fix.timestamp <= 10000
+      ? fix.altitude
+      : null;
+  }
+  private recordElevation(fix: Fix) {
+    if (
+      fix.altitude == null ||
+      (fix.altitudeAccuracy != null && fix.altitudeAccuracy > 20)
+    ) {
+      this.elevationFix = null;
+      return;
+    }
+    this.hasElevation = true;
+    if (this.elevationAnchor === null) {
+      this.elevationAnchor = fix.altitude;
+      this.elevationAt = fix.timestamp;
+      this.elevationFix = { altitude: fix.altitude, timestamp: fix.timestamp };
+      return;
+    }
+    // Small vertical fluctuations are GPS noise, especially without a vertical accuracy estimate.
+    const threshold = Math.max(
+      3,
+      Math.min(10, (fix.altitudeAccuracy ?? 10) * 0.6),
+    );
+    const delta = fix.altitude - this.elevationAnchor;
+    if (
+      Math.abs(delta) >
+      Math.max(10, ((fix.timestamp - this.elevationAt) / 1000) * 3)
+    ) {
+      this.elevationFix = null;
+      return;
+    }
+    this.elevationFix = { altitude: fix.altitude, timestamp: fix.timestamp };
+    if (delta >= threshold) {
+      this.elevationGainMeters += delta;
+      this.elevationAnchor = fix.altitude;
+      this.elevationAt = fix.timestamp;
+    } else if (delta <= -threshold) {
+      this.elevationAnchor = fix.altitude;
+      this.elevationAt = fix.timestamp;
+    }
   }
   ingest(
     input: Fix,
@@ -144,6 +207,10 @@ export class Runner {
     if (!this.anchor) {
       this.closeInterruption(now);
       this.anchor = fix;
+      this.elevationAnchor = null;
+      this.elevationAt = 0;
+      this.elevationFix = null;
+      this.recordElevation(fix);
       this.lastFix = fix;
       this.trace.push({ ...fix, segment: this.segment });
       this.samples = [{ at: fix.timestamp, meters: this.meters, moving: true }];
@@ -180,6 +247,7 @@ export class Runner {
     if (moved) {
       this.meters += delta;
       this.anchor = fix;
+      this.recordElevation(fix);
       this.trace.push({ ...fix, segment: this.segment });
       if (this.trace.length > 29000) this.trace = simplifyTrace(this.trace, 6);
     } else if (seconds >= 10) {
@@ -222,6 +290,9 @@ export class Runner {
     this.activeSince = null;
     this.phase = "paused";
     this.anchor = null;
+    this.elevationAnchor = null;
+    this.elevationAt = 0;
+    this.elevationFix = null;
     this.lastFix = null;
     this.samples = [];
     this.segment++;
@@ -240,10 +311,12 @@ export class Runner {
       startedAt: this.startedAt,
       elapsedMs: this.elapsed(now) * 1000,
       goal: this.goal,
+      mode: this.mode,
       route: this.route,
       routing: this.routing,
       trace: this.trace,
       meters: this.meters,
+      elevationGainMeters: this.elevationGainMeters,
       rejectedFixes: this.rejectedFixes,
       gaps: this.gaps,
       navigationNext: this.navigationNext,
@@ -260,10 +333,17 @@ export class Runner {
     this.startedAt = draft.startedAt;
     this.elapsedMs = draft.elapsedMs;
     this.goal = draft.goal;
+    this.mode = draft.mode ?? "goal";
     this.route = draft.route;
     this.routing = draft.routing;
     this.trace = draft.trace;
     this.meters = draft.meters;
+    this.elevationGainMeters = draft.elevationGainMeters ?? 0;
+    this.hasElevation = draft.trace.some(
+      (point) =>
+        point.altitude != null &&
+        (point.altitudeAccuracy == null || point.altitudeAccuracy <= 20),
+    );
     this.rejectedFixes = draft.rejectedFixes;
     this.gaps = draft.gaps;
     this.untrackedMs = draft.untrackedMs ?? 0;
@@ -280,6 +360,9 @@ export class Runner {
     this.lastSeen = draft.trace.at(-1)?.timestamp ?? 0;
     this.acceptAfter = draft.savedAt ?? this.lastSeen;
     this.anchor = null;
+    this.elevationAnchor = null;
+    this.elevationAt = 0;
+    this.elevationFix = null;
     this.samples = [];
     this.phase = "paused";
   }
@@ -295,7 +378,11 @@ export class Runner {
       finishedAt: new Date(now).toISOString(),
       durationSeconds: this.elapsedMs / 1000,
       distanceMeters: this.meters,
+      elevationGainMeters: this.hasElevation
+        ? this.elevationGainMeters
+        : undefined,
       goal: this.goal,
+      mode: this.mode,
       trace: simplifyTrace(this.trace),
       plannedRoute: this.route,
       quality: {

@@ -8,7 +8,6 @@ import {
   turnAt,
 } from "./geo";
 
-const PREVIEW_METERS = 65;
 const TURN_METERS = 15;
 const INSTRUCTION_INTERVAL_MS = 4000;
 const OFF_ROUTE_METERS = 35;
@@ -80,7 +79,7 @@ function routeTurns(route: Point[], cumulative: number[]): NavigationTurn[] {
 export class Navigator {
   next = 0;
   hasPriority = false;
-  private announced = new Map<number, "preview" | "turn">();
+  private announced = new Set<number>();
   private lastOffRouteAt = -Infinity;
   private lastInstructionAt = -Infinity;
   private lastTimestamp = -Infinity;
@@ -150,27 +149,21 @@ export class Navigator {
     );
     if (!turn) return null;
     const remaining = Math.max(0, this.cumulative[turn.index] - meters);
-    if (remaining > PREVIEW_METERS) return null;
+    if (remaining > TURN_METERS) return null;
     this.hasPriority = true;
-    const stage = remaining <= TURN_METERS ? "turn" : "preview";
-    const previous = this.announced.get(turn.index);
     if (
-      previous === "turn" ||
-      previous === stage ||
-      now - this.lastInstructionAt < INSTRUCTION_INTERVAL_MS ||
-      (previous === "preview" && now - this.lastInstructionAt < 8000)
+      this.announced.has(turn.index) ||
+      now - this.lastInstructionAt < INSTRUCTION_INTERVAL_MS
     )
       return null;
-    this.announced.set(turn.index, stage);
+    this.announced.add(turn.index);
     this.lastInstructionAt = now;
     const direction = { left: "doleva", right: "doprava", back: "zpět" };
     const instruction =
       turn.direction === "back"
         ? "Otočte se zpět"
         : `Odbočte ${direction[turn.direction]}`;
-    return stage === "turn"
-      ? `${instruction}.`
-      : `${instruction} za přibližně ${Math.round(remaining / 10) * 10} metrů.`;
+    return `${instruction}.`;
   }
 
   update(fix: Fix, now: number): string | null {

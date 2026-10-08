@@ -33,6 +33,13 @@ it("speaks a saved route's turns, deviation and return from actual app GPS callb
   vi.setSystemTime(epoch);
   document.documentElement.innerHTML = readFileSync("runner.html", "utf8");
   localStorage.clear();
+  localStorage.setItem(
+    "runguide.pace-settings",
+    JSON.stringify({
+      current: { enabled: true, intervalSeconds: 76 },
+      average: { enabled: false, intervalSeconds: 120 },
+    }),
+  );
   const points = [point(0, 0), point(0, 240), point(150, 240), point(150, 440)];
   const plan: Plan = {
     id: crypto.randomUUID(),
@@ -114,7 +121,7 @@ it("speaks a saved route's turns, deviation and return from actual app GPS callb
     synth.speak.mock.calls.map(([utterance]) => utterance.text);
   for (let t = 0; t <= 80; t++) {
     await gps(t, 0, t * 3);
-    if (t === 60) {
+    if (t === 76) {
       expect(spoken().at(-1)).toContain("Odbočte doprava");
       expect(spoken().some((text) => text.includes("Aktuální tempo"))).toBe(
         false,
@@ -124,11 +131,12 @@ it("speaks a saved route's turns, deviation and return from actual app GPS callb
   for (let t = 81; t <= 130; t++) await gps(t, (t - 80) * 3, 240);
   expect(
     spoken().filter((text) => text.startsWith("Odbočte doprava")),
-  ).toHaveLength(2);
+  ).toHaveLength(1);
   expect(
     spoken().filter((text) => text.startsWith("Odbočte doleva")),
-  ).toHaveLength(2);
+  ).toHaveLength(1);
   expect(spoken().some((text) => text.includes("Aktuální tempo"))).toBe(true);
+  expect(spoken().some((text) => /za přibližně|metrů/.test(text))).toBe(false);
   expect(
     synth.speak.mock.calls.every(([utterance]) => utterance.lang === "cs-CZ"),
   ).toBe(true);

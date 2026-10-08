@@ -21,8 +21,16 @@ export function historyCard(
   const metrics = document.createElement("p");
   metrics.textContent = `${formatTime(run.durationSeconds)} · ${formatPace(averageRunPace(run))} / km`;
   const target = document.createElement("p");
-  target.textContent = `Cíl: ${run.goal.distanceKm} km za ${run.goal.durationMinutes} min`;
+  target.textContent =
+    run.mode === "free"
+      ? "Volný běh bez cíle"
+      : `Cíl: ${run.goal.distanceKm} km za ${run.goal.durationMinutes} min`;
   summary.append(date, length, metrics, target);
+  if (run.elevationGainMeters !== undefined) {
+    const elevation = document.createElement("p");
+    elevation.textContent = `Nastoupáno: ${Math.round(run.elevationGainMeters)} m`;
+    summary.append(elevation);
+  }
   if (isIncomplete(run)) {
     const warning = document.createElement("p");
     warning.className = "app-notice";

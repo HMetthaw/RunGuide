@@ -1,13 +1,16 @@
 # RunGuide
 
-Instalovatelná webová aplikace (PWA) pro běžce: naplánuješ vlastní trasu, zadáš vzdálenost a cílový čas, a během běhu dostáváš GPS navigaci i hlasové vedení tempa do sluchátek.
+Instalovatelná webová aplikace (PWA) pro běžce: naplánuješ trasu a cíl, nebo volně vyběhneš bez přípravy. Během běhu sleduješ GPS, tempo a převýšení a dostáváš české hlasové pokyny do sluchátek.
 
 ## Cíl první verze
 
 - Nakreslit vlastní trasu na mapě před během.
 - Nastavit vzdálenost a cílový čas; aplikace spočítá cílové tempo v min/km.
-- Při běhu sledovat GPS polohu, vzdálenost a aktuální tempo.
-- Hlasem oznámit nadcházející odbočení a doporučit zrychlení nebo zpomalení.
+- Spustit volný běh bez naplánované trasy, cílové vzdálenosti a času.
+- Při běhu sledovat GPS polohu, vzdálenost, aktuální a průměrné tempo, nadmořskou výšku a nastoupané metry.
+- Hlasem oznámit odbočení jednou u odbočky, bez předběžného hlášení vzdálenosti.
+- Samostatně zapnout aktuální a průměrné tempo za celý běh, každé s vlastním intervalem 15 až 3 600 sekund. Nastavení lze měnit během běhu a ukládá se v zařízení.
+- Ve volném běhu oznámit každý dokončený kilometr a jeho tempo; při neúplném GPS záznamu nehlásit nespolehlivý průměr.
 - Ukládat tvoje soukromé trasy a historii běhů do cloudu pod vlastním účtem.
 - Zobrazit u každého historického běhu zjednodušenou mapku trasy.
 
@@ -66,7 +69,7 @@ npx wrangler@4.134.0 deploy --config wrangler.jsonc
 
 Na Windows při problému s certifikáty nastav v PowerShellu `$env:NODE_OPTIONS='--use-system-ca'`. Cloudflare tokeny patří do přihlášení Wrangleru nebo proměnných prostředí, nikdy do repozitáře. Build pro Workers používá výchozí `BASE_PATH=./`; nenasazuj sem výstup sestavený pro podadresář GitHub Pages.
 
-CI je v `.github/workflows/check.yml`, alternativní ručně spouštěné nasazení Pages v `.github/workflows/pages.yml`. GitHub remote zatím není nastavený. Pages workflow počítá s adresou `https://uživatel.github.io/název-repozitáře/`; pro vlastní doménu nastav `BASE_PATH=/`.
+CI je v `.github/workflows/check.yml`, alternativní ručně spouštěné nasazení Pages v `.github/workflows/pages.yml`. Zdrojový kód je v repozitáři [HMetthaw/RunGuide](https://github.com/HMetthaw/RunGuide). Pages workflow počítá s adresou `https://uživatel.github.io/název-repozitáře/`; pro vlastní doménu nastav `BASE_PATH=/`.
 
 Cloud připrav podle [docs/BACKEND.md](docs/BACKEND.md). Veřejné `VITE_` hodnoty se zapisují do `.env` nebo GitHub repository variables; nikdy do nich nedávej service-role/secret klíč.
 

@@ -23,7 +23,7 @@ export function gpx(run: Run): string {
   )
     .map(
       (points) =>
-        `<trkseg>${points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.timestamp).toISOString()}</time></trkpt>`).join("")}</trkseg>`,
+        `<trkseg>${points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lng}">${p.altitude == null ? "" : `<ele>${p.altitude}</ele>`}<time>${new Date(p.timestamp).toISOString()}</time></trkpt>`).join("")}</trkseg>`,
     )
     .join("")}</trk></gpx>`;
 }

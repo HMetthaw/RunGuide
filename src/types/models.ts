@@ -8,6 +8,8 @@ export const fixSchema = pointSchema.extend({
   timestamp: z.number().finite().nonnegative(),
   accuracy: z.number().finite().positive(),
   speed: z.number().finite().nonnegative().nullable().default(null),
+  altitude: z.number().finite().nullable().optional(),
+  altitudeAccuracy: z.number().finite().nonnegative().nullable().optional(),
 });
 export const tracePointSchema = fixSchema.extend({
   segment: z.number().int().nonnegative(),
@@ -39,7 +41,9 @@ export const runSchema = z
     finishedAt: z.string().datetime(),
     durationSeconds: z.number().finite().nonnegative(),
     distanceMeters: z.number().finite().nonnegative(),
+    elevationGainMeters: z.number().finite().nonnegative().optional(),
     goal: goalSchema,
+    mode: z.enum(["goal", "free"]).optional(),
     trace: z.array(tracePointSchema).max(30000),
     plannedRoute: z.array(pointSchema).max(5000),
     quality: z.object({
@@ -67,3 +71,4 @@ export type GoalDistanceSource = z.infer<typeof goalDistanceSourceSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Run = z.infer<typeof runSchema>;
 export type RunPhase = "idle" | "acquiring" | "running" | "paused" | "finished";
+export type RunMode = "goal" | "free";

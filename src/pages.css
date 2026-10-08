@@ -605,6 +605,47 @@ body[data-page="start"][data-step="run"] .active-run-link {
 .voice-card-settings .switch-label input:focus-visible + .switch-track {
   outline-color: var(--accent);
 }
+.pace-settings {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 20px;
+}
+.pace-settings h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.pace-channel {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 18px;
+  padding: 14px;
+  min-width: 0;
+}
+.pace-channel legend {
+  font-weight: 700;
+  font-size: 13px;
+  padding-inline: 5px;
+}
+.pace-channel p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.pace-interval {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.pace-interval input {
+  width: 100px;
+  min-height: 48px;
+}
+.pace-channel input[aria-invalid="true"] {
+  border-color: var(--error, #c33);
+}
 .data-settings .account-panel {
   display: block;
   border-top: 1px solid var(--line);

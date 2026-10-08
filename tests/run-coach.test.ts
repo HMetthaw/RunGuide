@@ -4,6 +4,10 @@ import { averagePace, runProgress } from "../src/domain/run-progress";
 import { Runner } from "../src/domain/runner";
 import type { CoachingSnapshot, GoalTrend } from "../src/types/coaching";
 
+const testSettings = {
+  current: { enabled: true, intervalSeconds: 60 },
+  average: { enabled: true, intervalSeconds: 120 },
+};
 const goal = { distanceKm: 2, durationMinutes: 12 };
 const epoch = 1789580000000;
 function snapshot(
@@ -107,13 +111,24 @@ describe("whole-run progress", () => {
 });
 
 describe("coaching decisions", () => {
+  it("reports the configured whole-run average independently of current movement", () => {
+    const coach = new RunCoach({
+      current: { enabled: false, intervalSeconds: 30 },
+      average: { enabled: true, intervalSeconds: 90 },
+    });
+    const advice = coach.advise(
+      snapshot(90, { currentPace: null, meters: 300 }),
+    );
+    expect(advice).toMatchObject({ kind: "progress", pace: 300 });
+    expect(coachingMessage(advice!, String)).not.toContain("Aktuální tempo");
+  });
+
   it("waits for active time, distance, running phase and stable GPS", () => {
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     expect(coach.advise(snapshot(59))).toBeNull();
     for (const override of [
       { meters: 0 },
-      { currentPace: null },
-      { currentPace: NaN },
+
       { gpsReliable: false },
       { activeSeconds: NaN },
       { phase: "paused" as const },
@@ -121,17 +136,21 @@ describe("coaching decisions", () => {
       { phase: "finished" as const },
     ])
       expect(coach.advise(snapshot(120, override))).toBeNull();
+    expect(coach.advise(snapshot(60, { currentPace: null }))).toBeNull();
+    expect(coach.advise(snapshot(60, { currentPace: NaN }))).toBeNull();
     expect(coach.advise(snapshot(60))?.kind).toBe("current");
   });
 
-  it("alternates smoothed current pace with whole-run progress every two active minutes", () => {
-    const coach = new RunCoach();
+  it("independently schedules current pace and merges it with average when both are due", () => {
+    const coach = new RunCoach(testSettings);
     for (const seconds of [60, 120, 180, 240]) {
       const advice = coach.advise(snapshot(seconds, { currentPace: 400 }));
       expect(advice).toMatchObject({
         kind: seconds % 120 === 0 ? "progress" : "current",
         pace: seconds % 120 === 0 ? 360 : 400,
       });
+      if (seconds % 120 === 0)
+        expect(advice).toMatchObject({ currentPace: 400 });
       coach.spoken(advice!, seconds);
       expect(coach.advise(snapshot(seconds + 1))).toBeNull();
     }
@@ -144,7 +163,7 @@ describe("coaching decisions", () => {
   ] as const)(
     "assesses average %s against the distance/time target",
     (pace, assessment) => {
-      const advice = new RunCoach().advise(
+      const advice = new RunCoach(testSettings).advise(
         snapshot(120, { meters: 120000 / pace }),
       );
       expect(advice).toMatchObject({ kind: "progress", pace, assessment });
@@ -152,7 +171,7 @@ describe("coaching decisions", () => {
   );
 
   it("retries speech suppressed by navigation without consuming the interval", () => {
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     const pending = coach.advise(snapshot(120));
     expect(pending?.kind).toBe("progress");
     expect(coach.advise(snapshot(125))?.kind).toBe("progress");
@@ -162,7 +181,7 @@ describe("coaching decisions", () => {
   });
 
   it("does not spend the interval during pauses or announce a burst after resume", () => {
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     coach.spoken(coach.advise(snapshot(120))!, 120);
     expect(coach.advise(snapshot(120, { phase: "paused" }))).toBeNull();
     coach.resume(120);
@@ -171,7 +190,7 @@ describe("coaching decisions", () => {
   });
 
   it("keeps a gap or restored recording uncertain even after GPS recovers", () => {
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     const advice = coach.advise(snapshot(120, { traceIncomplete: true }));
     expect(advice).toMatchObject({
       assessment: "uncertain",
@@ -194,7 +213,7 @@ describe("coaching decisions", () => {
   it.each([false, true])(
     "announces reaching the goal once, incomplete GPS: %s",
     (traceIncomplete) => {
-      const coach = new RunCoach();
+      const coach = new RunCoach(testSettings);
       const completed = coach.advise(
         snapshot(700, { meters: 2000, traceIncomplete }),
       );
@@ -207,14 +226,19 @@ describe("coaching decisions", () => {
           "Průměr při dosažení cílové vzdálenosti",
         );
       coach.spoken(completed!, 700);
-      expect(coach.advise(snapshot(900, { meters: 2200 }))).toBeNull();
+      const continued = coach.advise(snapshot(900, { meters: 2200 }));
+      expect(continued?.kind).toBe("progress");
+      expect(coachingMessage(continued!, String)).not.toContain("přidej");
+      coach.spoken(continued!, 900);
       coach.resume(900);
-      expect(coach.advise(snapshot(1000, { meters: 2500 }))).toBeNull();
+      expect(coach.advise(snapshot(1000, { meters: 2500 }))?.kind).toBe(
+        "current",
+      );
     },
   );
 
   it("retains a finish delayed by navigation even if the runner stops and the deadline passes", () => {
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     coach.spoken(coach.advise(snapshot(690))!, 690);
     expect(coach.advise(snapshot(700, { meters: 2000 }))).toBeNull();
     expect(
@@ -227,7 +251,7 @@ describe("coaching decisions", () => {
   });
 
   it("does not promise success or encourage catching up after time expires", () => {
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     const expired = coach.advise(snapshot(750, { meters: 1800 }));
     expect(expired).toMatchObject({
       kind: "progress",
@@ -265,7 +289,7 @@ describe("coaching decisions", () => {
 
   it("formats both pace messages through the same spoken-pace function and qualifies incomplete data", () => {
     const format = () => "6 minut 0 sekund na kilometr";
-    const coach = new RunCoach();
+    const coach = new RunCoach(testSettings);
     expect(coachingMessage(coach.advise(snapshot(60))!, format)).toContain(
       "Aktuální tempo 6 minut 0 sekund na kilometr.",
     );
@@ -277,7 +301,7 @@ describe("coaching decisions", () => {
       format,
     );
     expect(uncertain).toContain("Průměrné tempo a splnění cíle");
-    expect(uncertain).not.toContain("6 minut");
+    expect(uncertain).not.toContain("Dosavadní průměrné tempo 6 minut");
     expect(uncertain).toContain("nelze spolehlivě posoudit");
     expect(uncertain).not.toContain("zvládl");
   });

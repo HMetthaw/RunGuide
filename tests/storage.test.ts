@@ -118,6 +118,9 @@ describe("private local persistence", () => {
     expect(xml).toContain("<trkseg>");
     expect(xml).toContain('lat="49"');
     expect(xml).not.toContain("<script");
+    const elevated = recordedRun();
+    elevated.trace[0].altitude = 321.5;
+    expect(gpx(elevated)).toContain("<ele>321.5</ele>");
   });
   it("persists interruption quality privately and exports disjoint GPX segments", () => {
     const storage = new MemoryStorage();

@@ -30,4 +30,6 @@ export type CoachingAdvice =
       pace: number;
       assessment: GoalAssessment;
       traceIncomplete: boolean;
+      currentPace?: number;
+      goalComplete?: boolean;
     };

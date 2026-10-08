@@ -20,6 +20,17 @@ Přesné trasy čte a upravuje jen jejich vlastník. Mapový náhled historie se
 
 Klient nebude mít právo buňky přímo měnit. Pozdější serverová funkce ověří běh, zjednoduší polygon, dopočítá buňky a provede převzetí atomicky. První verze tyto tabulky nepoužívá.
 
+### Plánované žebříčky fáze 4
+
+Podrobné produktové zadání je v [plánu fáze 4](PLAN.md). Jde o budoucí návrh; migrace a API žebříčků zatím nejsou implementované.
+
+- Zavést území se stabilním ID a vazbou na nadřazené území, kategorie disciplín a soutěžní období. Město či vesnice představuje obec, nad ní je příslušná země a případné další zavedené úrovně.
+- Oddělit soukromé podklady a serverem ověřené výkony od veřejných souhrnů. Kategorie zahrnou teritoriální skóre, nejdelší jednotlivý běh a nejrychlejší souvislý úsek na pevné vzdálenosti.
+- Z ověřeného výkonu odvodit všechny příslušné žebříčky. Filtr zobrazený v klientovi ovlivňuje jen čtení, nikdy přidělení skóre nebo soutěžní příslušnost.
+- Výpočet musí být idempotentní, podporovat souběžné zpracování a přepočet při vyřazení či smazání běhu. Veřejné pořadí nesmí záviset na neověřeném `client_record`.
+- Klientům povolit pouze čtení schválených veřejných souhrnů bez GPS geometrie a soukromého profilu; soutěžní skóre a rekordy zapisuje výhradně server. Případné veřejné odkazy na výsledky nesmějí zpřístupnit zdrojový soukromý běh.
+- Před návrhem migrací uzavřít pravidla územní příslušnosti, období, účasti a mazání popsaná v produktovém plánu; do té doby ponechat herní tabulky nepřístupné klientům.
+
 ## Soukromí
 
 - Raw GPS trasa nikdy není veřejný zdroj dat.

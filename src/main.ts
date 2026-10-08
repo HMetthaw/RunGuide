@@ -1,6 +1,7 @@
 import type { Goal, GoalDistanceSource, Point, Run } from "./types/models";
 import { Runner } from "./domain/runner";
 import { RunCoach, coachingMessage } from "./domain/run-coach";
+import { FreeRunCoach, freeRunMessage } from "./domain/free-run-coach";
 import { GpsTracker } from "./services/gps-tracker";
 import { Navigator } from "./domain/navigation";
 import { distance } from "./domain/geo";
@@ -19,6 +20,7 @@ import { RoutePlanner } from "./services/route-planner";
 import { MAX_WAYPOINTS } from "./services/routing";
 import { VoiceGuide } from "./services/voice";
 import { setupVoiceSettings } from "./services/voice-settings";
+import { setupPaceSettings } from "./services/pace-settings";
 import { CloudRepository } from "./services/cloud";
 import { download, gpx } from "./services/export";
 import { historyCard } from "./services/history";
@@ -87,6 +89,7 @@ async function confirmAction(title: string, message: string): Promise<boolean> {
 
 const runner = new Runner();
 const coach = new RunCoach();
+const freeCoach = new FreeRunCoach();
 let storagePort: StoragePort;
 try {
   storagePort = window.localStorage;
@@ -139,6 +142,7 @@ const gpsTracker = new GpsTracker({
   resume: () => {
     navigation.resetConfidence();
     coach.resume(runner.elapsed(Date.now()));
+    freeCoach.resume(runner.elapsed(Date.now()));
     runner.checkSignal(Date.now());
     runner.reacquire(Date.now());
     text("gps-status", "Obnovuji GPS. Čekám na novou přesnou polohu…");
@@ -188,7 +192,13 @@ function goal(): Goal | null {
   return goalCalculator.readGoal();
 }
 function renderRoute(fit = false) {
-  map.setRoute(route, fit, planner.routing?.waypoints ?? planner.waypoints);
+  map.setRoute(
+    active() && runner.mode === "free" ? [] : route,
+    fit,
+    active() && runner.mode === "free"
+      ? []
+      : (planner.routing?.waypoints ?? planner.waypoints),
+  );
   const meters = planner.distanceMeters,
     target = goal();
   const count = planner.waypoints.length;
@@ -213,9 +223,9 @@ function renderRoute(fit = false) {
   text(
     "run-preparation-summary",
     !target
-      ? "Nejdřív oprav vzdálenost, čas nebo tempo v kroku Cíl a tempo."
+      ? "Pro běh s cílem oprav vzdálenost, čas nebo tempo. Volně můžeš vyběhnout hned."
       : planner.blocked
-        ? "Trasa není připravená. Vrať se na mapu a dokonči výpočet."
+        ? "Trasa pro běh s cílem není připravená. Volně můžeš vyběhnout hned."
         : `Cíl ${target.distanceKm.toLocaleString("cs")} km · ${target.durationMinutes.toLocaleString("cs")} min · tempo ${formatPace(targetPace(target))} / km`,
   );
   text("routing-status", planner.message);
@@ -248,6 +258,12 @@ function renderRoute(fit = false) {
     !!repository.draft() ||
     syncBusy ||
     planner.blocked ||
+    active();
+  input("start-free-run").disabled =
+    !identityReady ||
+    !!pendingRun ||
+    !!repository.draft() ||
+    syncBusy ||
     active();
   renderRouteControls();
 }
@@ -351,8 +367,19 @@ function renderRun() {
     pace = runner.currentPace(now);
   text("live-time", formatTime(seconds));
   text("live-distance", formatDistance(runner.meters));
+  const elevation = runner.currentElevation(now);
+  text(
+    "live-elevation",
+    elevation === null ? "—" : `${Math.round(elevation)} m n. m.`,
+  );
+  text(
+    "live-elevation-gain",
+    runner.hasElevation ? `${Math.round(runner.elevationGainMeters)} m` : "—",
+  );
   text("live-pace", formatPace(pace));
   text("average-pace", formatPace(runner.averagePace(now)));
+  show("goal-delta-metric", runner.mode === "goal");
+  show("goal-remaining-metric", runner.mode === "goal");
   const delta =
     pace === null ? null : Math.round(pace - targetPace(runner.goal));
   text(
@@ -370,6 +397,7 @@ function renderRun() {
         : `Do cílového času ${formatTime(remaining.remainingSeconds)}`,
   );
   show("start-run", !active());
+  show("start-free-run", !active());
   show("pause-run", ["running", "acquiring"].includes(runner.phase));
   show("resume-run", runner.phase === "paused");
   show("stop-run", active());
@@ -450,7 +478,14 @@ function beginGps() {
   gpsTracker.start();
 }
 function receivePosition(position: GeolocationPosition) {
-  const { latitude: lat, longitude: lng, accuracy, speed } = position.coords;
+  const {
+    latitude: lat,
+    longitude: lng,
+    accuracy,
+    speed,
+    altitude,
+    altitudeAccuracy,
+  } = position.coords;
   const now = Date.now(),
     wasWaiting = runner.phase === "acquiring";
   const fix = {
@@ -458,6 +493,8 @@ function receivePosition(position: GeolocationPosition) {
     lng,
     accuracy,
     speed,
+    altitude,
+    altitudeAccuracy,
     timestamp: position.timestamp,
   };
   const previousGaps = runner.gaps;
@@ -488,23 +525,32 @@ function receivePosition(position: GeolocationPosition) {
       lastRecoveryAdviceAt = now;
     }
     coach.resume(runner.elapsed(now));
+    freeCoach.resume(runner.elapsed(now));
   }
   const instruction = navigation.update(fix, now);
   runner.navigationNext = navigation.next;
   if (instruction) voice.speak(instruction, "navigation", now);
   const activeSeconds = runner.elapsed(now);
-  const advice = coach.advise({
+  const snapshot = {
     phase: runner.phase,
-    goal: runner.goal,
     meters: runner.meters,
     activeSeconds,
     currentPace: runner.currentPace(now),
     gpsReliable: accuracy <= 25 && !runner.interruption,
     traceIncomplete: runner.incomplete,
-  });
+  };
+  const advice =
+    runner.mode === "goal"
+      ? coach.advise({ ...snapshot, goal: runner.goal })
+      : null;
+  const freeAdvice = runner.mode === "free" ? freeCoach.advise(snapshot) : null;
   if (!instruction && !navigation.hasPriority && advice) {
     if (voice.speak(coachingMessage(advice, formatSpokenPace), "pace", now))
       coach.spoken(advice, activeSeconds);
+  }
+  if (!instruction && !navigation.hasPriority && freeAdvice) {
+    if (voice.speak(freeRunMessage(freeAdvice, formatSpokenPace), "pace", now))
+      freeCoach.spoken(freeAdvice, activeSeconds);
   }
   if (result === "accepted" || now - lastCheckpointAt >= 5000) checkpoint();
   renderRun();
@@ -643,15 +689,15 @@ action("delete-plan", async () => {
     renderPlans();
   }
 });
-action("start-run", () => {
-  const target = goal();
+function startRun(mode: "goal" | "free") {
+  const target = mode === "goal" ? goal() : runner.goal;
   if (
     !identityReady ||
     !target ||
     active() ||
     pendingRun ||
     repository.draft() ||
-    planner.blocked ||
+    (mode === "goal" && planner.blocked) ||
     syncBusy
   )
     return;
@@ -660,10 +706,16 @@ action("start-run", () => {
     return;
   }
   repository.saveDraft(null);
-  runner.start(target, route, planner.routing);
+  runner.start(
+    target,
+    mode === "free" ? [] : route,
+    mode === "free" ? undefined : planner.routing,
+    mode,
+  );
   checkpoint();
-  navigation = new Navigator(route);
+  navigation = new Navigator(runner.route);
   coach.reset();
+  freeCoach.reset();
   lastSignalAdviceAt = -Infinity;
   lastRecoveryAdviceAt = -Infinity;
   map.setTrace([]);
@@ -671,12 +723,16 @@ action("start-run", () => {
   renderRoute();
   text(
     "run-message",
-    "Tempo hlásíme po ustálení GPS. Každé dvě aktivní minuty přidáme průměr a odhad cíle. Pauza se do času nepočítá. Výpadek GPS označí záznam jako neúplný.",
+    mode === "free"
+      ? "Volný běh bez trasy a cíle. Tempo hlásíme podle tvého nastavení, každý dokončený kilometr zvlášť. Pauza se do času nepočítá."
+      : "Tempo hlásíme po ustálení GPS podle tvého nastavení. Aktuální a průměrné tempo mají vlastní intervaly. Pauza se do času nepočítá.",
   );
   voice.speak("Hledám GPS. Při běhu nech aplikaci otevřenou.");
   beginGps();
   appNavigation.navigate("run");
-});
+}
+action("start-run", () => startRun("goal"));
+action("start-free-run", () => startRun("free"));
 action("pause-run", () => {
   runner.pause(Date.now());
   stopGps();
@@ -690,6 +746,7 @@ action("resume-run", () => {
     runner.resume(Date.now());
     checkpoint();
     coach.resume(runner.elapsed(Date.now()));
+    freeCoach.resume(runner.elapsed(Date.now()));
     renderRun();
     beginGps();
   }
@@ -723,6 +780,7 @@ action("restore-run", () => {
   if (!draft) return;
   runner.restore(draft);
   coach.reset(runner.elapsed(Date.now()), runner.incomplete);
+  freeCoach.reset(runner.elapsed(Date.now()), runner.meters);
   goalDistanceSource = "manual";
   checkpoint();
   planner.restoreRun(draft.route, draft.routing);
@@ -734,6 +792,12 @@ action("restore-run", () => {
   renderRoute(true);
   renderRun();
   text("gps-status", "Běh obnovený v pauze. Až budeš připravený, pokračuj.");
+  text(
+    "run-message",
+    runner.mode === "free"
+      ? "Volný běh. Tempo hlásíme podle tvého nastavení a po každém dokončeném kilometru."
+      : "Běh s cílem. Tempo hlásíme po ustálení GPS.",
+  );
   appNavigation.navigate("run");
 });
 action("discard-draft", async () => {
@@ -758,6 +822,11 @@ input("voice-enabled").addEventListener("change", () => {
   if (!voice.enabled) voice.cancel();
 });
 setupVoiceSettings(voice, storagePort);
+setupPaceSettings(storagePort, (settings) => {
+  const seconds = runner.elapsed(Date.now());
+  coach.configure(settings, seconds);
+  freeCoach.configure(settings, seconds);
+});
 action("goal-use-route", () => input("use-route-distance").click());
 action("export-all", () =>
   download(

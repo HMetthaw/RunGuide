@@ -62,6 +62,12 @@ it("speaks current pace and whole-run progress, excludes pauses and qualifies GP
     input.value = value;
     input.dispatchEvent(new Event("input"));
   }
+  const interval = document.getElementById(
+    "pace-current-interval",
+  ) as HTMLInputElement;
+  interval.value = "60";
+  interval.dispatchEvent(new Event("change"));
+  document.getElementById("pace-average-enabled")!.click();
   document.getElementById("start-run")!.click();
   await vi.advanceTimersByTimeAsync(0);
   expect(success).toBeDefined();
@@ -112,11 +118,19 @@ it("speaks current pace and whole-run progress, excludes pauses and qualifies GP
     }
   }
 
-  expect(paceUtterances().map((utterance) => utterance.text)).toEqual([
+  expect(paceUtterances()).toHaveLength(5);
+  expect(paceUtterances()[0].text).toBe(
     "Aktuální tempo 5 minut 33 sekund na kilometr. Běžíš rychleji než své cílové tempo. Zkus trochu zpomalit.",
+  );
+  expect(paceUtterances()[1].text).toContain(
+    "Aktuální tempo 8 minut 15 sekund na kilometr. Dosavadní průměrné tempo",
+  );
+  expect(paceUtterances()[2].text).toBe(
     "Aktuální tempo 8 minut 15 sekund na kilometr. Držíš přibližně cílové tempo. Pokračuj ve svém rytmu.",
+  );
+  expect(paceUtterances()[4].text).toBe(
     "Aktuální tempo 9 minut 0 sekund na kilometr. Běžíš pomaleji než své cílové tempo. Jestli se cítíš dobře, lehce přidej.",
-  ]);
+  );
   expect(progressUtterances()).toHaveLength(2);
   for (const utterance of paceUtterances())
     expect(utterance.lang).toBe("cs-CZ");
